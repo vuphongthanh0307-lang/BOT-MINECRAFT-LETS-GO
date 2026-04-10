@@ -4,105 +4,115 @@ const mineflayer = require('mineflayer');
 // TẠO WEB SERVER
 const app = express();
 const port = process.env.PORT || 3000;
-app.get('/', (req, res) => res.send('Bot is running!'));
-app.listen(port, () => console.log(`[Web] Port ${port}`));
+app.get('/', (req, res) => {
+    res.send('Bot của Wind đang múa kiếm rách màn hình nhé!');
+});
+app.listen(port, () => {
+    console.log(`[Web] Server đang chạy trên port ${port}`);
+});
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 let botState = 'HUB'; 
-let compassInterval = null; 
+
+// Kéo biến clickLoop ra ngoài để Phần 3 có thể bấm nút TẮT nó
+let clickLoop; 
 
 function createBot() {
     const bot = mineflayer.createBot({
         host: 'aemine.vn',
         port: 25565,
-        username: 'winlxag5553', 
+        username: 'Windvu2193', 
         version: '1.12.2' 
     });
 
+    // 1. KHI VÀO SẢNH HUB
     bot.on('spawn', async () => {
         if (botState === 'HUB') {
             console.log('[Hub] Đã vào sảnh, chuẩn bị đăng nhập...');
             await sleep(2000);
             
             // ĐIỀN MẬT KHẨU CỦA BRO VÀO ĐÂY
-            bot.chat('/l Windvu2193'); 
+            bot.chat('/l MẬT_KHẨU_CỦA_BRO'); 
+            
             await sleep(6000); 
 
-            // FIX CỰC MẠNH: Tự động tìm La bàn trong người để cầm lên
-            const compass = bot.inventory.items().find(item => item.name === 'compass');
-            if (compass) {
-                console.log('[Hub] Đã tìm thấy La bàn, móc ra ngay...');
-                await bot.equip(compass, 'hand');
-            } else {
-                console.log('[Hub] Á đù không thấy La bàn, cứ nhấp bừa ô 4 vậy!');
-                bot.setQuickBarSlot(4);
-            }
-            
+            console.log('[Hub] Cầm La bàn lên tay...');
+            bot.setQuickBarSlot(4); 
             await sleep(1000);
             
             let clickAttempts = 0;
-            if (compassInterval) clearInterval(compassInterval);
+            // Xóa vòng lặp cũ nếu có trước khi tạo mới
+            if (clickLoop) clearInterval(clickLoop); 
 
-            compassInterval = setInterval(() => {
-                if (botState === 'HUB' && !bot.currentWindow && clickAttempts < 15) {
-                    console.log(`[Hub] Click chuột phải lần ${clickAttempts + 1}...`);
+            clickLoop = setInterval(() => {
+                if (botState === 'HUB' && clickAttempts < 10) {
+                    console.log(`[Hub] Đang click La bàn lần ${clickAttempts + 1}...`);
                     bot.activateItem(); 
                     clickAttempts++;
+                } else {
+                    clearInterval(clickLoop);
                 }
-            }, 2500); 
+            }, 2000); 
         }
     });
 
-    // BẢN CHƠI HỆ TỌA ĐỘ CỦA BRO (19 VÀ 15)
+    // 2. AUTO JOIN PARTY
+    bot.on('messagestr', (message) => {
+        if (message.includes('/pt join 18110998125')) {
+            console.log('[Party] Có lời mời, đang vào nhóm...');
+            bot.chat('/party join 18110998125');
+        }
+    });
+
+    // 3. XỬ LÝ MENU CLICK SERVER (TỌA ĐỘ CHUẨN 19 VÀ 15)
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
         
-        if (compassInterval) clearInterval(compassInterval);
-        console.log(`[Menu] BẢNG ĐÃ MỞ! Bắt đầu nhấp theo tọa độ bro dặn...`);
+        // CỰC KỲ QUAN TRỌNG: Tắt ngay spam la bàn khi bảng mở!
+        if (clickLoop) clearInterval(clickLoop);
+
+        console.log(`[Menu] Đã mở bảng: ${window.title}`);
 
         try {
-            await sleep(1000); 
+            await sleep(800); // Đợi xíu cho mạng load đồ
 
-            const slot15 = window.slots[15];
-            const slot19 = window.slots[19];
+            const itemSlot15 = window.slots[15];
+            const itemSlot19 = window.slots[19];
 
-            // Kiểm tra Menu 2: Kiếm Vàng ở slot 15
-            if (slot15 && slot15.name && slot15.name.includes('sword')) {
-                console.log('[Menu 2] Thấy Kiếm Vàng ở slot 15. Lao vào Farm!');
-                await bot.clickWindow(15, 0, 0);
+            // BƯỚC 1: Check Menu 2 (Game Menu) - Nhắm Slot 15 (Kiếm Vàng)
+            // THÊM ĐIỀU KIỆN: Phải là sword mới bấm
+            if (itemSlot15 && itemSlot15.name && itemSlot15.name.includes('sword')) {
+                console.log('[Menu 2] Trúng phóc Kiếm Vàng ô 15! Vào cụm Farm...');
+                await bot.clickWindow(15, 0, 0); 
                 
                 botState = 'FARMING'; 
                 setTimeout(() => startFarmingProcess(bot), 8000);
-                return; 
+                return;
             }
 
-            // Kiểm tra Menu 1: Block Cỏ ở slot 19
-            if (slot19 && slot19.name && slot19.name.includes('grass')) {
-                console.log('[Menu 1] Thấy Cỏ ở slot 19. Nhấp mở Menu 2...');
+            // BƯỚC 2: Check Menu 1 (Menu tổng) - Nhắm Slot 19 (Block Cỏ)
+            // THÊM ĐIỀU KIỆN: Phải là grass mới bấm (tránh nhấp nhầm Thuyền)
+            if (itemSlot19 && itemSlot19.name && itemSlot19.name.includes('grass')) {
+                console.log(`[Menu 1] Đã thấy Cỏ ở ô 19, đang click chuyển bảng...`);
                 await bot.clickWindow(19, 0, 0); 
-                return; 
+                return;
             }
 
-            console.log('[Menu] Ảo ma: Chả thấy Cỏ ở 19 cũng chả thấy Kiếm ở 15!');
+            console.log('[Menu] Lỗi: Không thấy Cỏ ở 19 cũng không thấy Kiếm ở 15!');
 
         } catch (err) {
             console.log('Lỗi click GUI:', err);
         }
     });
 
-    bot.on('messagestr', (message) => {
-        if (message.includes('/pt join 18110998125')) {
-            console.log('[Party] Có lời mời, đang vào...');
-            bot.chat('/party join 18110998125');
-        }
-    });
-
+    // 4. HỒI SINH
     bot.on('death', async () => {
         console.log('[Chết] Đang hồi sinh...');
         await sleep(3000); 
         startFarmingProcess(bot);
     });
 
+    // 5. CHỐNG SẬP SERVER
     bot.on('end', () => {
         console.log('[Mất mạng] Đợi 1 phút rồi tự kết nối lại...');
         botState = 'HUB'; 
@@ -112,8 +122,9 @@ function createBot() {
     bot.on('error', err => console.log('Lỗi:', err));
 }
 
-// LOGIC FARM CHÍNH THỨC
+// 6. LOGIC FARM CHÍNH THỨC
 async function startFarmingProcess(bot) {
+    console.log('[Farm] Đang dọn dẹp Party cũ...');
     bot.chat('/party quit'); 
     await sleep(1500);
 
