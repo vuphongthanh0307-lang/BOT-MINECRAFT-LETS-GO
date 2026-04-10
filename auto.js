@@ -67,45 +67,53 @@ function createBot() {
         }
     });
 
-    // 3. XỬ LÝ MENU CLICK SERVER (TỌA ĐỘ CHUẨN 13 VÀ 19 CỦA BRO)
+    // 3. XỬ LÝ MENU CLICK SERVER (BẢN CHỐNG LAG + MÁY X-QUANG)
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
         
-        // RÚT ĐIỆN VÒNG LẶP LA BÀN NGAY LẬP TỨC
+        // Rút điện vòng lặp nhấp la bàn ngay
         if (clickLoop) clearInterval(clickLoop);
 
         console.log(`[Menu] Đã mở bảng: ${window.title}`);
+        console.log(`[Menu] Đang kiên nhẫn đợi 2.5 giây cho server load đồ...`);
 
         try {
-            await sleep(800); // Đợi xíu cho mạng load đồ
+            await sleep(2500); // TĂNG LÊN 2.5 GIÂY ĐỂ CHỐNG MÙ
 
-            const itemSlot13 = window.slots[13]; // Kiếm vàng cụm 1
-            const itemSlot15 = window.slots[15]; // Kiếm vàng cụm 2 (phòng hờ)
-            const itemSlot19 = window.slots[19]; // Cỏ
+            // === MÁY X-QUANG: IN TOÀN BỘ ĐỒ RA LOG ĐỂ BẮT TẬN TAY ===
+            console.log("--- DANH SÁCH ĐỒ TRONG BẢNG ---");
+            window.items().forEach(item => {
+                console.log(`> Slot ${item.slot}: ${item.name} `);
+            });
+            console.log("-------------------------------");
 
-            // BƯỚC 1: Check Menu 2 (Game Menu) - Nhắm Slot 13 hoặc 15
+            const itemSlot13 = window.slots[13]; 
+            const itemSlot15 = window.slots[15]; 
+            const itemSlot19 = window.slots[19]; 
+
+            // Kiểm tra Menu 2 (Kiếm vàng)
             if (itemSlot13 && itemSlot13.name && itemSlot13.name.includes('sword')) {
-                console.log('[Menu 2] Trúng phóc Kiếm Vàng ô 13! Vào cụm Farm...');
+                console.log('[Menu 2] Trúng phóc Kiếm Vàng ô 13! Vào Farm...');
                 await bot.clickWindow(13, 0, 0); 
                 botState = 'FARMING'; 
                 setTimeout(() => startFarmingProcess(bot), 8000);
                 return;
             } else if (itemSlot15 && itemSlot15.name && itemSlot15.name.includes('sword')) {
-                console.log('[Menu 2] Trúng phóc Kiếm Vàng ô 15! Vào cụm Farm...');
+                console.log('[Menu 2] Trúng phóc Kiếm Vàng ô 15! Vào Farm...');
                 await bot.clickWindow(15, 0, 0); 
                 botState = 'FARMING'; 
                 setTimeout(() => startFarmingProcess(bot), 8000);
                 return;
             }
 
-            // BƯỚC 2: Check Menu 1 (Menu tổng) - Nhắm Slot 19 (Block Cỏ)
+            // Kiểm tra Menu 1 (Cỏ)
             if (itemSlot19 && itemSlot19.name && itemSlot19.name.includes('grass')) {
                 console.log(`[Menu 1] Đã thấy Cỏ ở ô 19, đang click chuyển bảng...`);
                 await bot.clickWindow(19, 0, 0); 
                 return;
             }
 
-            console.log('[Menu] Lỗi: Bảng trống hoặc sai tọa độ (Không thấy Cỏ/Kiếm)!');
+            console.log('[Menu] Vẫn không thấy Cỏ ô 19 hay Kiếm ô 13/15. Bro xem bảng X-quang ở trên xem nó nằm slot mấy!');
 
         } catch (err) {
             console.log('Lỗi click GUI:', err);
