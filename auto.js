@@ -60,33 +60,48 @@ function createBot() {
         }
     });
 
-    // 3. XỬ LÝ MENU CLICK SERVER
-    // 3. XỬ LÝ MENU CLICK SERVER (BẢN CHUẨN DÂN IT ĐẾM TỪ 0)
+    // 3. XỬ LÝ MENU CLICK SERVER (BẢN PHÂN LẬP & QUÉT NBT XUYÊN THẤU)
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
-        console.log(`[Menu] Đã mở bảng...`);
+        
+        // In tên bảng ra để dễ check lỗi
+        const menuName = window.title;
+        console.log(`[Menu] Đã mở bảng: ${menuName}`);
 
         try {
-            await sleep(500); 
+            // Tăng delay lên 800ms cho máy chủ Aemine nó load hết dữ liệu ẩn
+            await sleep(800); 
 
-            // BƯỚC 1: MENU 2 - Nhắm Slot 13 (Kiếm Vàng)
-            const itemSlot13 = window.slots[15];
-            // Check thêm điều kiện phải là sword cho chắc cú
-            if (itemSlot13 && itemSlot13.name.includes('sword')) { 
-                console.log('[Menu 2] Trúng phóc Kiếm Vàng! Đang phi vào cụm Farm...');
-                await bot.clickWindow(15, 0, 0);
-                
-                botState = 'FARMING'; 
-                setTimeout(() => startFarmingProcess(bot), 8000);
-                return;
+            // ==========================================
+            // KỊCH BẢN 1: ĐANG Ở BẢNG TỔNG (MENU 1)
+            // ==========================================
+            if (menuName.includes('Aemine.vn') && !menuName.includes('Game Menu')) {
+                console.log('[Menu 1] Đã xác nhận sảnh chờ. Nhấp Block Cỏ slot 20...');
+                await bot.clickWindow(20, 0, 0); 
+                return; // Bấm xong là ngắt luôn, không chạy xuống dưới
             }
 
-            // BƯỚC 2: MENU 1 - Nhắm Slot 20 (Block Cỏ)
-            const itemSlot20 = window.slots[20];
-            // Check thêm điều kiện phải là grass
-            if (itemSlot20 && itemSlot20.name.includes('grass')) {
-                console.log(`[Menu 1] Đã thấy Cỏ ở slot 20, đang click...`);
-                await bot.clickWindow(20, 0, 0); 
+            // ==========================================
+            // KỊCH BẢN 2: ĐANG Ở BẢNG CHỌN CỤM (MENU 2)
+            // ==========================================
+            if (menuName.includes('Game Menu') || menuName.includes('AEMINE.VN')) {
+                console.log('[Menu 2] Đã vào bảng chọn cụm, đang dùng mắt x-ray tìm MineLord...');
+                
+                const mineLordItem = window.items().find(item => {
+                    // Tuyệt chiêu: Ép toàn bộ dữ liệu NBT ẩn thành text thường để quét
+                    const itemDataString = JSON.stringify(item); 
+                    return itemDataString.includes('MineLord') && !itemDataString.includes('MineLord II');
+                });
+
+                if (mineLordItem) {
+                    console.log(`[Menu 2] Túm được cụm MineLord ở ô số ${mineLordItem.slot}! Đang lao vào...`);
+                    await bot.clickWindow(mineLordItem.slot, 0, 0);
+                    
+                    botState = 'FARMING'; 
+                    setTimeout(() => startFarmingProcess(bot), 8000);
+                } else {
+                    console.log('[Menu 2] CẢNH BÁO: Quét nát bảng vẫn không thấy chữ MineLord!');
+                }
                 return;
             }
 
