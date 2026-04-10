@@ -70,10 +70,10 @@ function createBot() {
             await sleep(500); 
 
             // BƯỚC 1: Check Menu 2 (Cụm server) - Nhắm ô số 4 (Kiếm Vàng)
-            const itemSlot4 = window.slots[4];
+            const itemSlot4 = window.slots[15];
             if (itemSlot4 && itemSlot4.name.includes('sword')) {
                 console.log('[Menu 2] Trúng phóc Kiếm Vàng! Đang phi vào cụm MineLord...');
-                await bot.clickWindow(4, 0, 0);
+                await bot.clickWindow(15, 0, 0);
                 
                 botState = 'FARMING'; 
                 setTimeout(() => startFarmingProcess(bot), 8000);
