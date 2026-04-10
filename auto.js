@@ -1,17 +1,16 @@
 const express = require('express');
 const mineflayer = require('mineflayer');
 
-// TẠO WEB SERVER ĐỂ LÁCH LUẬT TREO 24/7
+// TẠO WEB SERVER
 const app = express();
 const port = process.env.PORT || 3000;
 app.get('/', (req, res) => {
-    res.send('Bot của Wind vẫn đang online và sẵn sàng Party nhé!');
+    res.send('Bot của Wind đang múa kiếm rách màn hình nhé!');
 });
 app.listen(port, () => {
     console.log(`[Web] Server đang chạy trên port ${port}`);
 });
 
-// LOGIC BOT MINEFLAYER
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 let botState = 'HUB'; 
 
@@ -19,67 +18,82 @@ function createBot() {
     const bot = mineflayer.createBot({
         host: 'aemine.vn',
         port: 25565,
-        username: 'winlxag5553', 
+        username: 'Windvu2193', 
         version: '1.12.2' 
     });
 
-    // 1. KHI VÀO SERVER (HOẶC VÀO LẠI)
+    // 1. KHI VÀO SẢNH HUB
     bot.on('spawn', async () => {
-        console.log('[Hệ thống] Bot đã spawn!');
-        
-        // Luôn thoát party cũ mỗi khi vào lại server
-        bot.chat('/party quit');
-        await sleep(1000);
-
         if (botState === 'HUB') {
-            await sleep(1000);
-            bot.chat('/l Windvu2193'); // Sửa pass ở đây
-            await sleep(3000); 
+            console.log('[Hub] Đã vào sảnh, chuẩn bị đăng nhập...');
+            await sleep(2000);
+            
+            // ĐIỀN MẬT KHẨU CỦA BRO VÀO ĐÂY
+            bot.chat('/l MẬT_KHẨU_CỦA_BRO'); 
+            
+            // Tăng thời gian chờ load inventory lên 6 giây
+            await sleep(6000); 
+
+            console.log('[Hub] Cầm La bàn lên tay...');
             bot.setQuickBarSlot(4); 
             await sleep(1000);
-            bot.activateItem(); 
+            
+            // VÒNG LẶP SPAM CLICK: Click liên tục đến khi menu mở
+            let clickAttempts = 0;
+            const clickLoop = setInterval(() => {
+                if (botState === 'HUB' && clickAttempts < 10) {
+                    console.log(`[Hub] Đang click La bàn lần ${clickAttempts + 1}...`);
+                    bot.activateItem(); 
+                    clickAttempts++;
+                } else {
+                    clearInterval(clickLoop);
+                }
+            }, 2000); // Cứ 2 giây click 1 lần
         }
     });
 
-    // 2. TỰ ĐỘNG JOIN PARTY KHI THẤY TIN NHẮN MÀU VÀNG
+    // 2. AUTO JOIN PARTY
     bot.on('messagestr', (message) => {
-        // Kiểm tra nếu dòng chat chứa nội dung bro yêu cầu
         if (message.includes('/pt join 18110998125')) {
-            console.log('[Party] Phát hiện lời mời, đang tham gia...');
+            console.log('[Party] Có lời mời, đang vào nhóm...');
             bot.chat('/party join 18110998125');
         }
     });
 
-    // 3. XỬ LÝ CLICK GUI CHỌN SERVER
+    // 3. XỬ LÝ MENU CLICK SERVER
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
         try {
             const grassItem = window.items().find(item => item.name === 'grass');
             if (grassItem && window.title.includes('Aemine.vn')) {
+                console.log('[Menu] Thấy block Cỏ, click!');
                 await bot.clickWindow(grassItem.slot, 0, 0);
                 return;
             }
             const goldenSword = window.items().find(item => item.name === 'golden_sword');
             if (goldenSword) {
+                console.log('[Menu] Thấy Kiếm Vàng, click vào cụm Farm!');
                 await bot.clickWindow(goldenSword.slot, 0, 0);
-                botState = 'FARMING';
+                
+                // Đổi trạng thái để dừng việc click La bàn ở trên
+                botState = 'FARMING'; 
                 setTimeout(() => startFarmingProcess(bot), 8000);
             }
         } catch (err) {
-            console.log('Lỗi GUI:', err);
+            console.log('Lỗi click GUI:', err);
         }
     });
 
-    // 4. HỒI SINH KHI CHẾT
+    // 4. HỒI SINH
     bot.on('death', async () => {
-        console.log('[Chết] Đang hồi sinh và farm lại...');
+        console.log('[Chết] Đang hồi sinh...');
         await sleep(3000); 
         startFarmingProcess(bot);
     });
 
-    // 5. TỰ VÀO LẠI KHI DISCONNECT
+    // 5. CHỐNG SẬP SERVER
     bot.on('end', () => {
-        console.log('[Mất mạng] Đang đợi vào lại...');
+        console.log('[Mất mạng] Đợi 1 phút rồi tự kết nối lại...');
         botState = 'HUB'; 
         setTimeout(createBot, 60000); 
     });
@@ -87,29 +101,33 @@ function createBot() {
     bot.on('error', err => console.log('Lỗi:', err));
 }
 
-// 6. LOGIC FARM: HOME -> SHIFT COMBO -> SIT
+// 6. LOGIC FARM CHÍNH THỨC
 async function startFarmingProcess(bot) {
-    console.log('[Farm] Đang về nhà...');
+    console.log('[Farm] Đang dọn dẹp Party cũ...');
+    bot.chat('/party quit'); // Dời lệnh này xuống đây cho an toàn
+    await sleep(1500);
+
+    console.log('[Farm] Dịch chuyển về nhà...');
     bot.chat('/home');
     await sleep(3000); 
 
     console.log('[Farm] Đè Shift và múa combo...');
-    bot.setControlState('sneak', true); // Đè Shift
+    bot.setControlState('sneak', true); 
     await sleep(500);
 
-    bot.swingArm('right'); // Chuột trái
+    bot.swingArm('right'); 
     await sleep(300);
-    bot.activateItem(); // Chuột phải 1
+    bot.activateItem(); 
     await sleep(300);
-    bot.activateItem(); // Chuột phải 2
+    bot.activateItem(); 
     await sleep(300);
-    bot.activateItem(); // Chuột phải 3
+    bot.activateItem(); 
     await sleep(500);
 
-    bot.setControlState('sneak', false); // Nhả Shift
+    bot.setControlState('sneak', false); 
     await sleep(500);
 
-    console.log('[Farm] Chốt hạ bằng /sit...');
+    console.log('[Farm] An tọa bằng /sit...');
     bot.chat('/sit');
 }
 
