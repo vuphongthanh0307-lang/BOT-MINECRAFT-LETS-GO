@@ -9,7 +9,7 @@ app.listen(port, () => console.log(`[Web] Port ${port}`));
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 let botState = 'HUB'; 
-let compassInterval = null; // Khai báo chìa khóa để ngắt vòng lặp
+let compassInterval = null; 
 
 function createBot() {
     const bot = mineflayer.createBot({
@@ -28,67 +28,68 @@ function createBot() {
             bot.chat('/l MẬT_KHẨU_CỦA_BRO'); 
             await sleep(6000); 
 
-            bot.setQuickBarSlot(4); 
+            // FIX CỰC MẠNH: Tự động tìm La bàn trong người để cầm lên
+            const compass = bot.inventory.items().find(item => item.name === 'compass');
+            if (compass) {
+                console.log('[Hub] Đã tìm thấy La bàn, móc ra ngay...');
+                await bot.equip(compass, 'hand');
+            } else {
+                console.log('[Hub] Á đù không thấy La bàn, cứ nhấp bừa ô 4 vậy!');
+                bot.setQuickBarSlot(4);
+            }
+            
             await sleep(1000);
             
             let clickAttempts = 0;
-            if (compassInterval) clearInterval(compassInterval); // Dọn dẹp lặp cũ
+            if (compassInterval) clearInterval(compassInterval);
 
-            // Vòng lặp nhấp la bàn
             compassInterval = setInterval(() => {
-                // Thêm điều kiện: CHỈ click khi KHÔNG CÓ menu nào đang mở
                 if (botState === 'HUB' && !bot.currentWindow && clickAttempts < 15) {
-                    console.log(`[Hub] Click La bàn lần ${clickAttempts + 1}...`);
+                    console.log(`[Hub] Click chuột phải lần ${clickAttempts + 1}...`);
                     bot.activateItem(); 
                     clickAttempts++;
                 }
-            }, 2500); // Tăng lên 2.5s cho server kịp thở
+            }, 2500); 
         }
     });
 
+    // BẢN CHƠI HỆ TỌA ĐỘ CỦA BRO (19 VÀ 15)
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
         
-        // RÚT ĐIỆN NGAY LẬP TỨC: Tắt trò spam click la bàn
         if (compassInterval) clearInterval(compassInterval);
-
-        console.log(`[Menu] Bảng đã mở, đang đợi server load đồ...`);
+        console.log(`[Menu] BẢNG ĐÃ MỞ! Bắt đầu nhấp theo tọa độ bro dặn...`);
 
         try {
-            // Đợi hẳn 1 giây cho Aemine hết lag
             await sleep(1000); 
 
-            // ƯU TIÊN 1: TÌM MINELORD (Menu 2)
-            const mineLordItem = window.items().find(item => {
-                const itemDataString = JSON.stringify(item); 
-                return itemDataString.includes('MineLord') && !itemDataString.includes('MineLord II');
-            });
+            const slot15 = window.slots[15];
+            const slot19 = window.slots[19];
 
-            if (mineLordItem) {
-                console.log(`[Menu 2] TUYỆT VỜI! Bắt được MineLord ở slot ${mineLordItem.slot}. Vào Farm!`);
-                await bot.clickWindow(mineLordItem.slot, 0, 0);
+            // Kiểm tra Menu 2: Kiếm Vàng ở slot 15
+            if (slot15 && slot15.name && slot15.name.includes('sword')) {
+                console.log('[Menu 2] Thấy Kiếm Vàng ở slot 15. Lao vào Farm!');
+                await bot.clickWindow(15, 0, 0);
                 
                 botState = 'FARMING'; 
                 setTimeout(() => startFarmingProcess(bot), 8000);
                 return; 
             }
 
-            // ƯU TIÊN 2: TÌM CỎ SLOT 20 (Menu 1)
-            const itemSlot20 = window.slots[20];
-            if (itemSlot20 && JSON.stringify(itemSlot20).includes('grass')) {
-                console.log('[Menu 1] Đã thấy Cỏ slot 20. Bấm tiếp...');
-                await bot.clickWindow(20, 0, 0); 
+            // Kiểm tra Menu 1: Block Cỏ ở slot 19
+            if (slot19 && slot19.name && slot19.name.includes('grass')) {
+                console.log('[Menu 1] Thấy Cỏ ở slot 19. Nhấp mở Menu 2...');
+                await bot.clickWindow(19, 0, 0); 
                 return; 
             }
 
-            console.log('[Menu] Ảo thật, bảng trống trơn! Mạng lag làm rớt đồ rồi.');
+            console.log('[Menu] Ảo ma: Chả thấy Cỏ ở 19 cũng chả thấy Kiếm ở 15!');
 
         } catch (err) {
             console.log('Lỗi click GUI:', err);
         }
     });
 
-    // CÁC TÍNH NĂNG KHÁC GIỮ NGUYÊN
     bot.on('messagestr', (message) => {
         if (message.includes('/pt join 18110998125')) {
             console.log('[Party] Có lời mời, đang vào...');
