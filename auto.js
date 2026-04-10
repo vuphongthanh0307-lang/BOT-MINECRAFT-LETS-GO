@@ -60,50 +60,45 @@ function createBot() {
         }
     });
 
-    // 3. XỬ LÝ MENU CLICK SERVER (BẢN PHÂN LẬP & QUÉT NBT XUYÊN THẤU)
+    // 3. XỬ LÝ MENU CLICK SERVER (BẢN BƠ LUÔN TÊN BẢNG, CHỈ NHÌN ĐỒ)
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
         
-        // In tên bảng ra để dễ check lỗi
-        const menuName = window.title;
-        console.log(`[Menu] Đã mở bảng: ${menuName}`);
+        console.log(`[Menu] Kệ tên bảng, đang soi đồ bên trong...`);
 
         try {
-            // Tăng delay lên 800ms cho máy chủ Aemine nó load hết dữ liệu ẩn
+            // Đợi 800ms cho đồ load đầy đủ
             await sleep(800); 
 
             // ==========================================
-            // KỊCH BẢN 1: ĐANG Ở BẢNG TỔNG (MENU 1)
+            // ƯU TIÊN 1: TÌM CỤM MINELORD (Menu 2)
             // ==========================================
-            if (menuName.includes('Aemine.vn') && !menuName.includes('Game Menu')) {
-                console.log('[Menu 1] Đã xác nhận sảnh chờ. Nhấp Block Cỏ slot 20...');
-                await bot.clickWindow(20, 0, 0); 
-                return; // Bấm xong là ngắt luôn, không chạy xuống dưới
-            }
+            const mineLordItem = window.items().find(item => {
+                const itemDataString = JSON.stringify(item); 
+                return itemDataString.includes('MineLord') && !itemDataString.includes('MineLord II');
+            });
 
-            // ==========================================
-            // KỊCH BẢN 2: ĐANG Ở BẢNG CHỌN CỤM (MENU 2)
-            // ==========================================
-            if (menuName.includes('Game Menu') || menuName.includes('AEMINE.VN')) {
-                console.log('[Menu 2] Đã vào bảng chọn cụm, đang dùng mắt x-ray tìm MineLord...');
+            if (mineLordItem) {
+                console.log(`[Menu 2] Bắt được cụm MineLord ở slot ${mineLordItem.slot}! Vào Farm thôi...`);
+                await bot.clickWindow(mineLordItem.slot, 0, 0);
                 
-                const mineLordItem = window.items().find(item => {
-                    // Tuyệt chiêu: Ép toàn bộ dữ liệu NBT ẩn thành text thường để quét
-                    const itemDataString = JSON.stringify(item); 
-                    return itemDataString.includes('MineLord') && !itemDataString.includes('MineLord II');
-                });
-
-                if (mineLordItem) {
-                    console.log(`[Menu 2] Túm được cụm MineLord ở ô số ${mineLordItem.slot}! Đang lao vào...`);
-                    await bot.clickWindow(mineLordItem.slot, 0, 0);
-                    
-                    botState = 'FARMING'; 
-                    setTimeout(() => startFarmingProcess(bot), 8000);
-                } else {
-                    console.log('[Menu 2] CẢNH BÁO: Quét nát bảng vẫn không thấy chữ MineLord!');
-                }
-                return;
+                botState = 'FARMING'; 
+                setTimeout(() => startFarmingProcess(bot), 8000);
+                return; // Nhấp xong là nghỉ
             }
+
+            // ==========================================
+            // ƯU TIÊN 2: TÌM BLOCK CỎ SLOT 20 (Menu 1)
+            // ==========================================
+            const itemSlot20 = window.slots[20];
+            // Ép JSON ra để check chữ grass, đề phòng nó đổi tên
+            if (itemSlot20 && JSON.stringify(itemSlot20).includes('grass')) {
+                console.log('[Menu 1] Đã thấy Block Cỏ ở slot 20. Bấm mù luôn...');
+                await bot.clickWindow(20, 0, 0); 
+                return; // Nhấp xong là nghỉ để bảng sau mở ra
+            }
+
+            console.log('[Menu] Ảo thật, không thấy MineLord cũng chả thấy Cỏ đâu!');
 
         } catch (err) {
             console.log('Lỗi click GUI:', err);
