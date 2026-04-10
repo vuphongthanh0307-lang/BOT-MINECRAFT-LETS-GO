@@ -19,7 +19,7 @@ function createBot() {
     const bot = mineflayer.createBot({
         host: 'aemine.vn',
         port: 25565,
-        username: 'Windvu2193', 
+        username: 'winlxag5553', 
         version: '1.12.2' 
     });
 
@@ -33,7 +33,7 @@ function createBot() {
 
         if (botState === 'HUB') {
             await sleep(1000);
-            bot.chat('/l MẬT_KHẨU_CỦA_BRO'); // Sửa pass ở đây
+            bot.chat('/l Windvu2193'); // Sửa pass ở đây
             await sleep(3000); 
             bot.setQuickBarSlot(4); 
             await sleep(1000);
