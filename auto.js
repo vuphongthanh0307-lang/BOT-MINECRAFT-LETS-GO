@@ -91,10 +91,10 @@ function createBot() {
             }
 
             // BƯỚC 2: MENU 1 - Vẫn giữ nguyên tọa độ ô 20 cho Block Cỏ
-            const itemSlot20 = window.slots[20];
+            const itemSlot20 = window.slots[19];
             if (itemSlot20 && itemSlot20.name.includes('grass')) {
-                console.log(`[Menu 1] Đã thấy Cỏ ở slot 20, đang click...`);
-                await bot.clickWindow(20, 0, 0); 
+                console.log(`[Menu 1] Đã thấy Cỏ ở slot 19, đang click...`);
+                await bot.clickWindow(19, 0, 0); 
                 return;
             }
 
