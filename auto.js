@@ -63,28 +63,27 @@ function createBot() {
     // 3. XỬ LÝ MENU CLICK SERVER
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
-        
         console.log(`[Menu] Đã mở bảng: ${window.title}`);
 
         try {
             await sleep(500); 
 
-            // BƯỚC 1: Check Menu 2 (Cụm server) - Nhắm ô số 4 (Kiếm Vàng)
-            const itemSlot4 = window.slots[15];
-            if (itemSlot4 && itemSlot4.name.includes('sword')) {
-                console.log('[Menu 2] Trúng phóc Kiếm Vàng! Đang phi vào cụm MineLord...');
-                await bot.clickWindow(15, 0, 0);
+            // BƯỚC 1: Check Menu 2 (Game Menu) - Nhắm Slot 13 (Kiếm Vàng)
+            const itemSlot13 = window.slots[13];
+            if (itemSlot13 && itemSlot13.name.includes('sword')) {
+                console.log('[Menu 2] Trúng phóc Kiếm Vàng! Vào cụm MineLord...');
+                await bot.clickWindow(13, 0, 0); // SỬA SỐ 13
                 
                 botState = 'FARMING'; 
                 setTimeout(() => startFarmingProcess(bot), 8000);
                 return;
             }
 
-            // BƯỚC 2: Check Menu 1 (Menu tổng) - Nhắm ô số 20 (Block Cỏ)
-            const itemSlot20 = window.slots[20]; // SỬA LẠI SỐ 20 Ở ĐÂY
-            if (itemSlot20) {
-                console.log(`[Menu 1] Đã thấy ô Cỏ ở vị trí 20, đang click...`);
-                await bot.clickWindow(20, 0, 0); // VÀ CẢ Ở ĐÂY NỮA
+            // BƯỚC 2: Check Menu 1 (Menu tổng) - Nhắm Slot 19 (Block Cỏ)
+            const itemSlot19 = window.slots[19];
+            if (itemSlot19) {
+                console.log(`[Menu 1] Đã thấy Cỏ ở slot 19, đang click...`);
+                await bot.clickWindow(19, 0, 0); // SỬA SỐ 19
                 return;
             }
 
