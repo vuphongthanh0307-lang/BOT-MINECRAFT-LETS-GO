@@ -61,29 +61,40 @@ function createBot() {
     });
 
     // 3. XỬ LÝ MENU CLICK SERVER
+    // 3. XỬ LÝ MENU CLICK SERVER (BẢN QUÉT TÊN SIÊU VIỆT)
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
-        console.log(`[Menu] Đã mở bảng: ${window.title}`);
+        console.log(`[Menu] Đã mở bảng...`);
 
         try {
             await sleep(500); 
 
-            // BƯỚC 1: Check Menu 2 (Game Menu) - Nhắm Slot 13 (Kiếm Vàng)
-            const itemSlot13 = window.slots[13];
-            if (itemSlot13 && itemSlot13.name.includes('sword')) {
-                console.log('[Menu 2] Trúng phóc Kiếm Vàng! Vào cụm MineLord...');
-                await bot.clickWindow(13, 0, 0); // SỬA SỐ 13
+            // BƯỚC 1: TÌM CHÍNH XÁC CỤM MINELORD (Bỏ qua MineLord II)
+            // Lệnh này sẽ quét toàn bộ đồ trong túi để tìm đúng mục tiêu
+            const mineLordItem = window.items().find(item => {
+                // Lấy tên vật phẩm (ưu tiên tên custom server đặt, nếu không có lấy tên gốc)
+                // Mineflayer 1.12.2 thường lưu tên màu mè ở customName
+                const itemName = item.customName || item.name || "";
+                
+                // Trả về TRUE nếu: Có chữ MineLord VÀ (&&) KHÔNG CÓ (!) chữ MineLord II
+                return itemName.includes('MineLord') && !itemName.includes('MineLord II');
+            });
+
+            // Nếu tìm thấy món đồ thỏa mãn điều kiện trên:
+            if (mineLordItem) { 
+                console.log(`[Menu 2] Trúng phóc! Đã thấy cụm MineLord chuẩn ở ô số ${mineLordItem.slot}, đang phi vào...`);
+                await bot.clickWindow(mineLordItem.slot, 0, 0);
                 
                 botState = 'FARMING'; 
                 setTimeout(() => startFarmingProcess(bot), 8000);
                 return;
             }
 
-            // BƯỚC 2: Check Menu 1 (Menu tổng) - Nhắm Slot 19 (Block Cỏ)
-            const itemSlot19 = window.slots[19];
-            if (itemSlot19) {
-                console.log(`[Menu 1] Đã thấy Cỏ ở slot 19, đang click...`);
-                await bot.clickWindow(19, 0, 0); // SỬA SỐ 19
+            // BƯỚC 2: MENU 1 - Vẫn giữ nguyên tọa độ ô 20 cho Block Cỏ
+            const itemSlot20 = window.slots[20];
+            if (itemSlot20 && itemSlot20.name.includes('grass')) {
+                console.log(`[Menu 1] Đã thấy Cỏ ở slot 20, đang click...`);
+                await bot.clickWindow(20, 0, 0); 
                 return;
             }
 
@@ -91,7 +102,6 @@ function createBot() {
             console.log('Lỗi click GUI:', err);
         }
     });
-
     // 4. HỒI SINH
     bot.on('death', async () => {
         console.log('[Chết] Đang hồi sinh...');
