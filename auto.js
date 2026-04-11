@@ -51,7 +51,24 @@ function createBot() {
         }
     });
 
-    // 2. XỬ LÝ CLICK MENU (Vô cụm Farm)
+    // ====================================================
+    // 2. AUTO JOIN PARTY (BẢN HÚT SẠCH MỌI THỂ LOẠI CHỮ & SỐ)
+    // ====================================================
+    bot.on('messagestr', (message) => {
+        // Sự kiện messagestr đã tự động lột sạch mã màu (vàng, xanh, đỏ...)
+        if (message.includes('/pt join')) {
+            // Tuyệt chiêu \S+ : Bắt lấy chuỗi liền trước khoảng trắng tiếp theo
+            const match = message.match(/\/pt join (\S+)/);
+            
+            if (match) {
+                const partyId = match[1]; // Lụm nguyên cái chuỗi phía sau
+                console.log(`[Party] Bắt được lời mời! Đang auto gõ: /party join ${partyId}`);
+                bot.chat(`/party join ${partyId}`);
+            }
+        }
+    });
+
+    // 3. XỬ LÝ CLICK MENU (Vô cụm Farm)
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
         if (clickLoop) clearInterval(clickLoop);
@@ -73,21 +90,20 @@ function createBot() {
         }
     });
 
-    // 3. ĐÂY LÀ CHỖ BRO CẦN: TỰ ĐỘNG HỒI SINH VÀ LẶP LẠI
+    // 4. TỰ ĐỘNG HỒI SINH VÀ LẶP LẠI
     bot.on('death', async () => {
         console.log('[Chết] Ôi không, tôi đã hy sinh! Đang hồi sinh...');
         
-        // PHÁ KHÓA: Khi chết phải reset lại mọi trạng thái để hồi sinh xong là múa được ngay
+        // Phá khóa & nhả kẹt phím
         isComboRunning = false; 
-        bot.clearControlStates(); // Nhả hết phím Shift/Chuột đang kẹt
+        bot.clearControlStates(); 
         
-        // Thường Mineflayer tự bấm nút Respawn, mình chỉ cần đợi load map
         await sleep(5000); 
         console.log('[Hồi sinh] Bắt đầu lại quy trình farm từ bước /spawn...');
         startFarmingProcess(bot);
     });
 
-    // 4. CHỐNG SẬP & MẤT KẾT NỐI
+    // 5. CHỐNG SẬP & MẤT KẾT NỐI
     bot.on('end', () => {
         console.log('[Mất mạng] Đợi 1 phút tự kết nối lại...');
         botState = 'HUB'; 
@@ -100,9 +116,9 @@ function createBot() {
     bot.on('error', err => console.log('[Lỗi Minecraft]:', err.message));
 }
 
-// 5. KỊCH BẢN FARM (SPAWN -> COMBO -> HOME -> SIT)
+// 6. KỊCH BẢN FARM (SPAWN -> COMBO -> HOME -> SIT)
 async function startFarmingProcess(bot) {
-    if (isComboRunning) return; // Chống múa đè
+    if (isComboRunning) return; 
     isComboRunning = true;
 
     try {
@@ -144,7 +160,7 @@ async function startFarmingProcess(bot) {
     } catch (err) {
         console.log('[Farm] Lỗi trong lúc múa:', err.message);
     } finally {
-        isComboRunning = false; // Mở khóa để có thể chạy lại lần sau
+        isComboRunning = false; 
     }
 }
 
