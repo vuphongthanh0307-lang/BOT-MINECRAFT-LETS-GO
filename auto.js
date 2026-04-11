@@ -29,7 +29,8 @@ function createBot() {
         host: 'aemine.vn',
         port: 25565,
         username: 'winlxag5553', 
-        version: '1.12.2' 
+        version: '1.12.2',
+        viewDistance: 'tiny' // <--- THÊM ĐÚNG DÒNG NÀY ĐỂ CỨU RAM
     });
 
     // 1. VÀO SẢNH HUB
