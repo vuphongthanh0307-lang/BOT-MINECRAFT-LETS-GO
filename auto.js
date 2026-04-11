@@ -1,4 +1,4 @@
-econst express = require('express');
+const express = require('express');
 const mineflayer = require('mineflayer');
 
 // TẠO WEB SERVER (CHỐNG SLEEP)
