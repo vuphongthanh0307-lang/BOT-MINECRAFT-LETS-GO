@@ -20,11 +20,9 @@ let antiAfkLoop;
 let isLoggingIn = false; 
 let isComboRunning = false; 
 
-// BIẾN SINH TỒN & ÂN XÁ
-let playerDeathCount = 0; 
-let shouldReconnect = true; 
+// BIẾN SINH TỒN
+let shouldReconnect = true; // Khóa kết nối nếu bị giết
 let wasKicked = false; 
-let killResetTimer = null; // Biến giữ đồng hồ ân xá
 
 function createBot() {
     const bot = mineflayer.createBot({
@@ -60,7 +58,7 @@ function createBot() {
     });
 
     // ====================================================
-    // 2. KHUNG CHAT (SOI MÃ PARTY & ÂN XÁ 15 PHÚT)
+    // 2. KHUNG CHAT (AUTO PARTY & 1 HIT LÀ OUT VĨNH VIỄN)
     // ====================================================
     bot.on('messagestr', (message) => {
         // A. AUTO PARTY
@@ -73,31 +71,16 @@ function createBot() {
             }
         }
 
-        // B. CẢNH BÁO BỊ KS & CƠ CHẾ ÂN XÁ
+        // B. CẢNH BÁO BỊ KS (1 LẦN LÀ OUT LUÔN)
         const isKilledByPlayer = message.includes('winlxag5553') && 
                                  (message.toLowerCase().includes('slain by') || 
                                   message.toLowerCase().includes('slained by') || 
                                   message.toLowerCase().includes('giết'));
         
         if (isKilledByPlayer) {
-            playerDeathCount++;
-            console.log(`[CẢNH BÁO MÁU] Bị giết lần thứ ${playerDeathCount}`);
-            
-            if (playerDeathCount >= 2) {
-                console.log('[RÚT LUI] Bị KS 2 lần liên tục! Nghỉ game.');
-                shouldReconnect = false; 
-                bot.quit();
-            } else {
-                // NẾU CHỈ MỚI BỊ GIẾT 1 LẦN: Kích hoạt đồng hồ ân xá 15 phút
-                console.log('[Hệ Thống] Đã kích hoạt đồng hồ ân xá. Nếu trong 15 phút tới không bị giết nữa, số mạng sẽ reset về 0.');
-                
-                if (killResetTimer) clearTimeout(killResetTimer); // Xóa đồng hồ cũ nếu có
-                
-                killResetTimer = setTimeout(() => {
-                    playerDeathCount = 0;
-                    console.log('[Hệ Thống] Đã qua 15 phút bình yên. Reset số lần bị giết về 0!');
-                }, 900000); // 15 phút = 15 * 60 * 1000 ms
-            }
+            console.log('[RÚT LUI KHẨN CẤP] Bị người chơi khác KS! Bãi đã có chủ, nhường cho nó. Tắt bot ngay lập tức!');
+            shouldReconnect = false; // Chốt cửa, cấm tự động kết nối lại
+            bot.quit(); // Thoát game không ngoảnh mặt lại
         }
     });
 
@@ -122,10 +105,10 @@ function createBot() {
         }
     });
 
-    // 4. HỒI SINH
+    // 4. HỒI SINH (Nếu bị quái cắn hoặc té chết)
     bot.on('death', async () => {
-        if (!shouldReconnect) return; 
-        console.log('[Chết] Đang hồi sinh...');
+        if (!shouldReconnect) return; // Bị người chơi giết thì đã cấm hồi sinh rồi
+        console.log('[Chết] Bị quái cắn hoặc té chết! Đang hồi sinh...');
         isComboRunning = false; 
         bot.clearControlStates(); 
         await sleep(5000); 
@@ -139,7 +122,10 @@ function createBot() {
     });
 
     bot.on('end', () => {
-        if (!shouldReconnect) return;
+        if (!shouldReconnect) {
+            console.log('[SHUTDOWN] Đã rút điện bot vì bị KS!');
+            return;
+        }
 
         botState = 'HUB'; 
         isLoggingIn = false;
@@ -159,16 +145,28 @@ function createBot() {
     bot.on('error', err => console.log('[Lỗi Minecraft]:', err.message));
 }
 
-// 6. KỊCH BẢN FARM
+// ====================================================
+// 6. KỊCH BẢN FARM (THÊM TÍNH NĂNG CHỌN Ô SỐ 1)
+// ====================================================
 async function startFarmingProcess(bot) {
     if (isComboRunning) return; 
     isComboRunning = true;
 
     try {
+        console.log('[Farm] Đang dọn dẹp Party cũ...');
+        bot.chat('/party quit'); 
+        await sleep(1500);
+
+        // === TÍNH NĂNG MỚI: CHỌN Ô SỐ 1 ===
+        console.log('[Farm] Chuẩn bị đồ nghề: Chọn ô số 1 trên tay...');
+        bot.setQuickBarSlot(0); // Số 0 tương ứng với ô đầu tiên (ô 1)
+        await sleep(1000);
+
         console.log('[Farm] Ra /spawn...');
         bot.chat('/spawn');
         await sleep(5000); 
 
+        console.log('[Farm] Bắt đầu chuỗi Combo (Đè Shift + 1 Trái + 3 Phải)...');
         bot.setControlState('sneak', true); 
         await sleep(800); 
         bot.swingArm('right'); 
@@ -183,8 +181,11 @@ async function startFarmingProcess(bot) {
         bot.clearControlStates(); 
         await sleep(1500); 
 
+        console.log('[Farm] Về nhà /home...');
         bot.chat('/home');
         await sleep(5000);
+        
+        console.log('[Farm] Ngồi xuống /sit...');
         bot.chat('/sit');
 
         if (antiAfkLoop) clearInterval(antiAfkLoop);
