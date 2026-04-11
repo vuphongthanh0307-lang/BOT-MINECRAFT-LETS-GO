@@ -1,4 +1,4 @@
-const express = require('express');
+econst express = require('express');
 const mineflayer = require('mineflayer');
 
 // TẠO WEB SERVER (CHỐNG SLEEP)
@@ -154,6 +154,11 @@ async function startFarmingProcess(bot) {
         bot.chat('/party quit'); 
         await sleep(1500);
 
+        // === BƯỚC MỚI THÊM: THỬ VÀO LẠI PARTY MẶC ĐỊNH ===
+        console.log('[Farm] Thử vào lại Party mặc định (18110998125)...');
+        bot.chat('/party join 18110998125');
+        await randomSleep(1500, 2000); // Ngâm một nhịp cho server xử lý
+        
         console.log('[Farm] Chuẩn bị đồ nghề: Chọn ô số 1 trên tay...');
         bot.setQuickBarSlot(0); 
         await sleep(1000);
