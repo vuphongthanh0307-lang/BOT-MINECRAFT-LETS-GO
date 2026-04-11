@@ -11,7 +11,7 @@ app.listen(port, () => console.log(`[Web] Server đang chạy trên port ${port}
 process.on('uncaughtException', (err) => console.log('[Khiên Bất Tử] Chặn lỗi:', err.message));
 process.on('unhandledRejection', (err) => console.log('[Khiên Bất Tử] Lỗi Promise:', err.message));
 
-// ĐỊNH NGHĨA HÀM NGỦ & NGỦ NGẪU NHIÊN (Bản cũ bro bị thiếu dòng số 2 này)
+// === ĐÂY LÀ 2 DÒNG THẦN THÁNH CHỮA CÁI LỖI TRONG ẢNH CỦA BRO ===
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const randomSleep = (min, max) => sleep(Math.floor(Math.random() * (max - min + 1) + min));
 
@@ -31,7 +31,7 @@ function createBot() {
         port: 25565,
         username: 'winlxag5553', 
         version: '1.12.2',
-        viewDistance: 'tiny' 
+        viewDistance: 'tiny' // Ép bot giảm tải RAM
     });
 
     bot.on('spawn', async () => {
@@ -132,6 +132,9 @@ function createBot() {
     bot.on('error', err => console.log('[Lỗi Minecraft]:', err.message));
 }
 
+// ====================================================
+// 6. KỊCH BẢN FARM (HOÀN CHỈNH)
+// ====================================================
 async function startFarmingProcess(bot) {
     if (isComboRunning) return; 
     isComboRunning = true;
