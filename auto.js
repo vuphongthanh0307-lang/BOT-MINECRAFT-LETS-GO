@@ -61,40 +61,40 @@ function createBot() {
     });
 
     // 3. XỬ LÝ MENU CLICK SERVER
-    // 3. XỬ LÝ MENU CLICK SERVER (BẢN FIX TỌA ĐỘ Ô ĐỒ)
+    // 3. XỬ LÝ MENU CLICK SERVER (BẢN NHẮM MẮT CLICK CHẬM THEO TỌA ĐỘ 20 VÀ 14)
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
         
-        // In ra màn hình đen xem bot đang mở menu tên gì để dễ theo dõi
-        console.log(`[Menu] Đã mở bảng: ${window.title}`);
+        // Rút điện la bàn ngay lập tức
+        if (clickLoop) clearInterval(clickLoop);
+
+        console.log(`[Menu] Bảng đã mở... Đang chờ server load 3 giây...`);
 
         try {
-            // Đợi nửa giây cho server kịp load hình ảnh item vào menu
-            await sleep(500); 
-            // BƯỚC 2: Nếu không thấy kiếm vàng thì check Menu 1 (Menu tổng)
-            // Nhắm thẳng vào ô số 10 (Vị trí block Cỏ)
-            const itemSlot10 = window.slots[21];
-            if (itemSlot10) {
-                console.log(`[Menu 1] Đã thấy ô Cỏ, đang click...`);
-                await bot.clickWindow(21, 0, 0);
-                return;
-            }
-            await sleep(500);
-            const itemSlot4 = window.slots[15];
-            if (itemSlot4 && itemSlot4.name.includes('sword')) {
-                console.log('[Menu 2] Trúng phóc Kiếm Vàng! Đang phi vào cụm MineLord...');
-                await bot.clickWindow(15, 0, 0);
-                
-                botState = 'FARMING'; 
-                setTimeout(() => startFarmingProcess(bot), 8000);
-                return;
-            }
+            // Bước 1: Đợi 3 giây cho bảng 1 load đầy đủ
+            await sleep(3000); 
+
+            // Cứ nhắm mắt nhấp slot 20 (Block Cỏ)
+            console.log(`[Menu 1] Nhấp thẳng vào slot 20 (Cỏ)...`);
+            await bot.clickWindow(20, 0, 0); 
+
+            // Bước 2: Đợi 2.5 giây cho server kịp chuyển sang bảng 2
+            console.log(`[Menu] Đang chờ 2.5 giây để mở bảng 2...`);
+            await sleep(2500); 
+
+            // Nhắm mắt nhấp tiếp slot 14 (Kiếm Vàng)
+            console.log(`[Menu 2] Nhấp thẳng vào slot 14 (Kiếm Vàng)...`);
+            await bot.clickWindow(14, 0, 0); 
+            
+            // Vào farm
+            botState = 'FARMING'; 
+            console.log('[Menu] Đã xong chuỗi click! 8 giây nữa bắt đầu farm...');
+            setTimeout(() => startFarmingProcess(bot), 8000);
 
         } catch (err) {
             console.log('Lỗi click GUI:', err);
         }
     });
-
     // 4. HỒI SINH
     bot.on('death', async () => {
         console.log('[Chết] Đang hồi sinh...');
