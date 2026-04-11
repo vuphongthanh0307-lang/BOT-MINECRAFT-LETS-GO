@@ -18,7 +18,7 @@ function createBot() {
     const bot = mineflayer.createBot({
         host: 'aemine.vn',
         port: 25565,
-        username: 'Windvu2193', 
+        username: 'winlxag5553', 
         version: '1.12.2' 
     });
 
@@ -29,7 +29,7 @@ function createBot() {
             await sleep(2000);
             
             // ĐIỀN MẬT KHẨU CỦA BRO VÀO ĐÂY
-            bot.chat('/l MẬT_KHẨU_CỦA_BRO'); 
+            bot.chat('/l Windvu2193'); 
             
             // Tăng thời gian chờ load inventory lên 6 giây
             await sleep(6000); 
@@ -79,6 +79,7 @@ function createBot() {
                 await bot.clickWindow(21, 0, 0);
                 return;
             }
+            await sleep(500);
             const itemSlot4 = window.slots[15];
             if (itemSlot4 && itemSlot4.name.includes('sword')) {
                 console.log('[Menu 2] Trúng phóc Kiếm Vàng! Đang phi vào cụm MineLord...');
