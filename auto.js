@@ -21,16 +21,16 @@ let isLoggingIn = false;
 let isComboRunning = false; 
 
 // BIẾN SINH TỒN
-let shouldReconnect = true; // Khóa kết nối nếu bị giết
-let wasKicked = false; 
+let shouldReconnect = true; // Khóa kết nối nếu bị người chơi khác giết
 
 function createBot() {
+    // THÊM viewDistance: 'tiny' ĐỂ ÉP BOT GIẢM CÂN, CỨU RAM CHO THẰNG RENDER
     const bot = mineflayer.createBot({
         host: 'aemine.vn',
         port: 25565,
         username: 'winlxag5553', 
         version: '1.12.2',
-        viewDistance: 'tiny' // <--- THÊM ĐÚNG DÒNG NÀY ĐỂ CỨU RAM
+        viewDistance: 'tiny' 
     });
 
     // 1. VÀO SẢNH HUB
@@ -62,7 +62,6 @@ function createBot() {
     // 2. KHUNG CHAT (AUTO PARTY & 1 HIT LÀ OUT VĨNH VIỄN)
     // ====================================================
     bot.on('messagestr', (message) => {
-        // A. AUTO PARTY
         if (message.includes('/pt join')) {
             const match = message.match(/\/pt join (\S+)/);
             if (match) {
@@ -72,16 +71,15 @@ function createBot() {
             }
         }
 
-        // B. CẢNH BÁO BỊ KS (1 LẦN LÀ OUT LUÔN)
         const isKilledByPlayer = message.includes('winlxag5553') && 
                                  (message.toLowerCase().includes('slain by') || 
                                   message.toLowerCase().includes('slained by') || 
                                   message.toLowerCase().includes('giết'));
         
         if (isKilledByPlayer) {
-            console.log('[RÚT LUI KHẨN CẤP] Bị người chơi khác KS! Bãi đã có chủ, nhường cho nó. Tắt bot ngay lập tức!');
-            shouldReconnect = false; // Chốt cửa, cấm tự động kết nối lại
-            bot.quit(); // Thoát game không ngoảnh mặt lại
+            console.log('[RÚT LUI KHẨN CẤP] Bị KS! Bãi đã có chủ. Tắt bot ngay!');
+            shouldReconnect = false; 
+            bot.quit(); 
         }
     });
 
@@ -106,9 +104,9 @@ function createBot() {
         }
     });
 
-    // 4. HỒI SINH (Nếu bị quái cắn hoặc té chết)
+    // 4. HỒI SINH TỰ NHIÊN
     bot.on('death', async () => {
-        if (!shouldReconnect) return; // Bị người chơi giết thì đã cấm hồi sinh rồi
+        if (!shouldReconnect) return; 
         console.log('[Chết] Bị quái cắn hoặc té chết! Đang hồi sinh...');
         isComboRunning = false; 
         bot.clearControlStates(); 
@@ -116,13 +114,16 @@ function createBot() {
         startFarmingProcess(bot);
     });
 
-    // 5. BỊ STAFF SÚT & MẤT KẾT NỐI
+    // ====================================================
+    // 5. FIX LỖI SERVER RESET & KẸT ACC (KHÔNG NÚP 10 PHÚT NỮA)
+    // ====================================================
     bot.on('kicked', (reason) => {
-        console.log(`[CẢNH BÁO ĐỎ] Bị STAFF sút! Lý do: ${reason}`);
-        wasKicked = true; 
+        // Chỉ in ra để biết tại sao bị đá, chứ không tính thời gian 10 phút nữa
+        console.log(`[Bị Kick] Server đá ra ngoài! Lý do: ${reason}`);
     });
 
     bot.on('end', () => {
+        // Rút điện nếu bị KS
         if (!shouldReconnect) {
             console.log('[SHUTDOWN] Đã rút điện bot vì bị KS!');
             return;
@@ -132,23 +133,18 @@ function createBot() {
         isLoggingIn = false;
         isComboRunning = false;
         if (antiAfkLoop) clearInterval(antiAfkLoop); 
+        if (clickLoop) clearInterval(clickLoop);
 
-        let waitTime = 60000; 
-        if (wasKicked) {
-            console.log('[TRÚ ẨN] Bị soi, núp 10 phút...');
-            waitTime = 600000; 
-            wasKicked = false; 
-        }
-
-        setTimeout(createBot, waitTime); 
+        // THỜI GIAN VÀNG 2 PHÚT (120000ms) CHỮA BÁCH BỆNH:
+        // Đủ để Server reboot lúc 6h / Đủ để Proxy tự xóa kẹt acc
+        console.log('[Mất mạng/Reset] Đang đợi 2 phút để server nhả acc rồi vào lại...');
+        setTimeout(createBot, 120000); 
     });
 
     bot.on('error', err => console.log('[Lỗi Minecraft]:', err.message));
 }
 
-// ====================================================
-// 6. KỊCH BẢN FARM (THÊM TÍNH NĂNG CHỌN Ô SỐ 1)
-// ====================================================
+// 6. KỊCH BẢN FARM (SẴN Ô SỐ 1)
 async function startFarmingProcess(bot) {
     if (isComboRunning) return; 
     isComboRunning = true;
@@ -158,16 +154,15 @@ async function startFarmingProcess(bot) {
         bot.chat('/party quit'); 
         await sleep(1500);
 
-        // === TÍNH NĂNG MỚI: CHỌN Ô SỐ 1 ===
         console.log('[Farm] Chuẩn bị đồ nghề: Chọn ô số 1 trên tay...');
-        bot.setQuickBarSlot(0); // Số 0 tương ứng với ô đầu tiên (ô 1)
+        bot.setQuickBarSlot(0); 
         await sleep(1000);
 
         console.log('[Farm] Ra /spawn...');
         bot.chat('/spawn');
         await sleep(5000); 
 
-        console.log('[Farm] Bắt đầu chuỗi Combo (Đè Shift + 1 Trái + 3 Phải)...');
+        console.log('[Farm] Bắt đầu chuỗi Combo...');
         bot.setControlState('sneak', true); 
         await sleep(800); 
         bot.swingArm('right'); 
