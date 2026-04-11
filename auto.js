@@ -14,40 +14,33 @@ app.listen(port, () => {
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 let botState = 'HUB'; 
 
-// CHÌA KHÓA CHỐNG BUG: Khóa luồng và khóa la bàn
-let clickLoop; 
-let isLoggingIn = false; 
-
 function createBot() {
     const bot = mineflayer.createBot({
         host: 'aemine.vn',
         port: 25565,
-        username: 'winlxag5553', 
+        username: 'Windvu2193', 
         version: '1.12.2' 
     });
 
     // 1. KHI VÀO SẢNH HUB
     bot.on('spawn', async () => {
-        // Ổ KHÓA CHỐNG PHÂN THÂN: Chỉ cho chạy đúng 1 lần duy nhất!
-        if (botState === 'HUB' && !isLoggingIn) {
-            isLoggingIn = true; // Khóa cửa lại
-
+        if (botState === 'HUB') {
             console.log('[Hub] Đã vào sảnh, chuẩn bị đăng nhập...');
             await sleep(2000);
             
             // ĐIỀN MẬT KHẨU CỦA BRO VÀO ĐÂY
-            bot.chat('/l Windvu2193'); 
+            bot.chat('/l MẬT_KHẨU_CỦA_BRO'); 
             
+            // Tăng thời gian chờ load inventory lên 6 giây
             await sleep(6000); 
 
             console.log('[Hub] Cầm La bàn lên tay...');
             bot.setQuickBarSlot(4); 
             await sleep(1000);
             
+            // VÒNG LẶP SPAM CLICK: Click liên tục đến khi menu mở
             let clickAttempts = 0;
-            if (clickLoop) clearInterval(clickLoop); 
-
-            clickLoop = setInterval(() => {
+            const clickLoop = setInterval(() => {
                 if (botState === 'HUB' && clickAttempts < 10) {
                     console.log(`[Hub] Đang click La bàn lần ${clickAttempts + 1}...`);
                     bot.activateItem(); 
@@ -55,7 +48,7 @@ function createBot() {
                 } else {
                     clearInterval(clickLoop);
                 }
-            }, 2000); 
+            }, 2000); // Cứ 2 giây click 1 lần
         }
     });
 
@@ -67,53 +60,34 @@ function createBot() {
         }
     });
 
-    // 3. XỬ LÝ MENU CLICK SERVER (BẢN KIÊN NHẪN 5 GIÂY)
+    // 3. XỬ LÝ MENU CLICK SERVER
+    // 3. XỬ LÝ MENU CLICK SERVER (BẢN FIX TỌA ĐỘ Ô ĐỒ)
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
         
-        // Rút điện la bàn
-        if (clickLoop) clearInterval(clickLoop);
-
-        console.log(`[Menu] Bảng đã mở...`);
-        console.log(`[Menu] Đang chill 5 giây chờ server nhả đồ...`);
+        // In ra màn hình đen xem bot đang mở menu tên gì để dễ theo dõi
+        console.log(`[Menu] Đã mở bảng: ${window.title}`);
 
         try {
-            await sleep(5000); // CHỜ HẲN 5 GIÂY CHO ĐÁNG ĐỒNG TIỀN BÁT GẠO
-
-            // In lại X-quang để lát check xem 5s có đủ không
-            console.log("--- X-QUANG ĐỒ LẦN NÀY ---");
-            window.items().forEach(item => {
-                console.log(`> Slot ${item.slot}: ${item.name} `);
-            });
-            console.log("--------------------------");
-
-            const itemSlot13 = window.slots[13]; 
-            const itemSlot15 = window.slots[15]; 
-            const itemSlot19 = window.slots[19]; 
-
-            // Ưu tiên 1: Cụm Farm (Menu 2)
-            if (itemSlot13 && itemSlot13.name && itemSlot13.name.includes('sword')) {
-                console.log('[Menu 2] Thấy Kiếm Vàng ô 13! Lụm...');
-                await bot.clickWindow(13, 0, 0); 
-                botState = 'FARMING'; 
-                setTimeout(() => startFarmingProcess(bot), 8000);
+            // Đợi nửa giây cho server kịp load hình ảnh item vào menu
+            await sleep(500); 
+            // BƯỚC 2: Nếu không thấy kiếm vàng thì check Menu 1 (Menu tổng)
+            // Nhắm thẳng vào ô số 10 (Vị trí block Cỏ)
+            const itemSlot10 = window.slots[21];
+            if (itemSlot10) {
+                console.log(`[Menu 1] Đã thấy ô Cỏ, đang click...`);
+                await bot.clickWindow(21, 0, 0);
                 return;
-            } else if (itemSlot15 && itemSlot15.name && itemSlot15.name.includes('sword')) {
-                console.log('[Menu 2] Thấy Kiếm Vàng ô 15! Lụm...');
-                await bot.clickWindow(15, 0, 0); 
+            }
+            const itemSlot4 = window.slots[15];
+            if (itemSlot4 && itemSlot4.name.includes('sword')) {
+                console.log('[Menu 2] Trúng phóc Kiếm Vàng! Đang phi vào cụm MineLord...');
+                await bot.clickWindow(15, 0, 0);
+                
                 botState = 'FARMING'; 
                 setTimeout(() => startFarmingProcess(bot), 8000);
                 return;
             }
-
-            // Ưu tiên 2: Block Cỏ (Menu 1)
-            if (itemSlot19 && itemSlot19.name && itemSlot19.name.includes('grass')) {
-                console.log(`[Menu 1] Đã thấy Cỏ ở ô 19! Đang click mở Menu 2...`);
-                await bot.clickWindow(19, 0, 0); 
-                return;
-            }
-
-            console.log('[Menu] 5 giây rồi mà bảng vẫn trống! Bó tay server!');
 
         } catch (err) {
             console.log('Lỗi click GUI:', err);
@@ -131,7 +105,6 @@ function createBot() {
     bot.on('end', () => {
         console.log('[Mất mạng] Đợi 1 phút rồi tự kết nối lại...');
         botState = 'HUB'; 
-        isLoggingIn = false; // Mở khóa cho lần kết nối sau
         setTimeout(createBot, 60000); 
     });
 
@@ -141,7 +114,7 @@ function createBot() {
 // 6. LOGIC FARM CHÍNH THỨC
 async function startFarmingProcess(bot) {
     console.log('[Farm] Đang dọn dẹp Party cũ...');
-    bot.chat('/party quit'); 
+    bot.chat('/party quit'); // Dời lệnh này xuống đây cho an toàn
     await sleep(1500);
 
     console.log('[Farm] Dịch chuyển về nhà...');
