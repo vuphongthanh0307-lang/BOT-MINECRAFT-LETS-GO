@@ -11,7 +11,9 @@ app.listen(port, () => console.log(`[Web] Server đang chạy trên port ${port}
 process.on('uncaughtException', (err) => console.log('[Khiên Bất Tử] Chặn lỗi:', err.message));
 process.on('unhandledRejection', (err) => console.log('[Khiên Bất Tử] Lỗi Promise:', err.message));
 
+// ĐỊNH NGHĨA HÀM NGỦ & NGỦ NGẪU NHIÊN (Bản cũ bro bị thiếu dòng số 2 này)
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const randomSleep = (min, max) => sleep(Math.floor(Math.random() * (max - min + 1) + min));
 
 // CÁC BIẾN QUẢN LÝ TRẠNG THÁI
 let botState = 'HUB'; 
@@ -21,10 +23,9 @@ let isLoggingIn = false;
 let isComboRunning = false; 
 
 // BIẾN SINH TỒN
-let shouldReconnect = true; // Khóa kết nối nếu bị người chơi khác giết
+let shouldReconnect = true; 
 
 function createBot() {
-    // THÊM viewDistance: 'tiny' ĐỂ ÉP BOT GIẢM CÂN, CỨU RAM CHO THẰNG RENDER
     const bot = mineflayer.createBot({
         host: 'aemine.vn',
         port: 25565,
@@ -33,7 +34,6 @@ function createBot() {
         viewDistance: 'tiny' 
     });
 
-    // 1. VÀO SẢNH HUB
     bot.on('spawn', async () => {
         if (botState === 'HUB' && !isLoggingIn) {
             isLoggingIn = true;
@@ -58,9 +58,6 @@ function createBot() {
         }
     });
 
-    // ====================================================
-    // 2. KHUNG CHAT (AUTO PARTY & 1 HIT LÀ OUT VĨNH VIỄN)
-    // ====================================================
     bot.on('messagestr', (message) => {
         if (message.includes('/pt join')) {
             const match = message.match(/\/pt join (\S+)/);
@@ -83,7 +80,6 @@ function createBot() {
         }
     });
 
-    // 3. XỬ LÝ CLICK MENU
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
         if (clickLoop) clearInterval(clickLoop);
@@ -104,7 +100,6 @@ function createBot() {
         }
     });
 
-    // 4. HỒI SINH TỰ NHIÊN
     bot.on('death', async () => {
         if (!shouldReconnect) return; 
         console.log('[Chết] Bị quái cắn hoặc té chết! Đang hồi sinh...');
@@ -114,16 +109,11 @@ function createBot() {
         startFarmingProcess(bot);
     });
 
-    // ====================================================
-    // 5. FIX LỖI SERVER RESET & KẸT ACC (KHÔNG NÚP 10 PHÚT NỮA)
-    // ====================================================
     bot.on('kicked', (reason) => {
-        // Chỉ in ra để biết tại sao bị đá, chứ không tính thời gian 10 phút nữa
         console.log(`[Bị Kick] Server đá ra ngoài! Lý do: ${reason}`);
     });
 
     bot.on('end', () => {
-        // Rút điện nếu bị KS
         if (!shouldReconnect) {
             console.log('[SHUTDOWN] Đã rút điện bot vì bị KS!');
             return;
@@ -135,8 +125,6 @@ function createBot() {
         if (antiAfkLoop) clearInterval(antiAfkLoop); 
         if (clickLoop) clearInterval(clickLoop);
 
-        // THỜI GIAN VÀNG 2 PHÚT (120000ms) CHỮA BÁCH BỆNH:
-        // Đủ để Server reboot lúc 6h / Đủ để Proxy tự xóa kẹt acc
         console.log('[Mất mạng/Reset] Đang đợi 2 phút để server nhả acc rồi vào lại...');
         setTimeout(createBot, 120000); 
     });
@@ -144,7 +132,6 @@ function createBot() {
     bot.on('error', err => console.log('[Lỗi Minecraft]:', err.message));
 }
 
-// 6. KỊCH BẢN FARM (SẴN Ô SỐ 1)
 async function startFarmingProcess(bot) {
     if (isComboRunning) return; 
     isComboRunning = true;
@@ -154,10 +141,9 @@ async function startFarmingProcess(bot) {
         bot.chat('/party quit'); 
         await sleep(1500);
 
-        // === BƯỚC MỚI THÊM: THỬ VÀO LẠI PARTY MẶC ĐỊNH ===
         console.log('[Farm] Thử vào lại Party mặc định (18110998125)...');
         bot.chat('/party join 18110998125');
-        await randomSleep(1500, 2000); // Ngâm một nhịp cho server xử lý
+        await randomSleep(1500, 2000); 
         
         console.log('[Farm] Chuẩn bị đồ nghề: Chọn ô số 1 trên tay...');
         bot.setQuickBarSlot(0); 
