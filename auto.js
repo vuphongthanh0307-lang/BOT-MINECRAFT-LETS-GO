@@ -1,6 +1,6 @@
 const express = require('express');
 const mineflayer = require('mineflayer');
-
+let clickLoop;
 // TẠO WEB SERVER
 const app = express();
 const port = process.env.PORT || 3000;
