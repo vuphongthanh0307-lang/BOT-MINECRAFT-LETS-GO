@@ -113,22 +113,19 @@ function createBot() {
     bot.on('error', err => console.log('Lỗi:', err));
 }
 
-// 6. LOGIC FARM CHÍNH THỨC (BẢN FIX CHUẨN NHỊP ĐIỆU)
+// 6. LOGIC FARM CHÍNH THỨC (BẢN UPDATE: SPAWN -> COMBO -> HOME -> SIT)
 async function startFarmingProcess(bot) {
-    console.log('[Farm] Đang dọn dẹp Party cũ...');
-    bot.chat('/party quit'); 
-    await sleep(2000); // Tăng lên 2s cho chắc ăn
-
-    console.log('[Farm] Dịch chuyển về nhà...');
-    bot.chat('/home');
-    await sleep(5000); // Tăng lên 5s để đảm bảo mạng load xong map ở nhà
+    console.log('[Farm] Dịch chuyển ra /spawn trước...');
+    bot.chat('/spawn');
+    // Đợi 5s cho server load xong map ở spawn (chống lag rớt map)
+    await sleep(5000); 
 
     console.log('[Farm] Bắt đầu chuỗi Combo: Đè Shift...');
     bot.setControlState('sneak', true); 
-    await sleep(800); // Đợi 1 nhịp cho server nhận diện là đang đè Shift
+    await sleep(800); 
 
     console.log('[Farm] Múa: Chuột TRÁI (1 lần)');
-    bot.swingArm('right'); // Trong Minecraft, swingArm('right') chính là click chuột trái
+    bot.swingArm('right'); 
     await sleep(500);
     
     console.log('[Farm] Múa: Chuột PHẢI (Lần 1)');
@@ -145,9 +142,14 @@ async function startFarmingProcess(bot) {
 
     console.log('[Farm] Xong combo, Nhả Shift ra...');
     bot.setControlState('sneak', false); 
-    await sleep(1500); // Đứng đợi 1.5s trước khi ngồi cho mượt
+    await sleep(1500); // Đợi xíu cho nó đứng thẳng dậy hẳn
 
-    console.log('[Farm] An tọa bằng /sit...');
+    console.log('[Farm] Dịch chuyển về nhà /home...');
+    bot.chat('/home');
+    // Tiếp tục đợi 5s cho nó load xong map ở nhà
+    await sleep(5000);
+
+    console.log('[Farm] An tọa bằng /sit kết thúc quy trình...');
     bot.chat('/sit');
 }
 
