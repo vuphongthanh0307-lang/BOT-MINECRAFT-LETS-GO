@@ -1,6 +1,6 @@
 const express = require('express');
 const mineflayer = require('mineflayer');
-let clickLoop;
+
 // TẠO WEB SERVER
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,6 +14,9 @@ app.listen(port, () => {
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 let botState = 'HUB'; 
 
+let clickLoop; // Biến toàn cục để tắt vòng lặp
+let isLoggingIn = false; // Chống phân thân
+
 function createBot() {
     const bot = mineflayer.createBot({
         host: 'aemine.vn',
@@ -24,23 +27,25 @@ function createBot() {
 
     // 1. KHI VÀO SẢNH HUB
     bot.on('spawn', async () => {
-        if (botState === 'HUB') {
+        if (botState === 'HUB' && !isLoggingIn) {
+            isLoggingIn = true;
             console.log('[Hub] Đã vào sảnh, chuẩn bị đăng nhập...');
             await sleep(2000);
             
             // ĐIỀN MẬT KHẨU CỦA BRO VÀO ĐÂY
             bot.chat('/l Windvu2193'); 
             
-            // Tăng thời gian chờ load inventory lên 6 giây
             await sleep(6000); 
 
             console.log('[Hub] Cầm La bàn lên tay...');
             bot.setQuickBarSlot(4); 
             await sleep(1000);
             
-            // VÒNG LẶP SPAM CLICK: Click liên tục đến khi menu mở
             let clickAttempts = 0;
-            const clickLoop = setInterval(() => {
+            if (clickLoop) clearInterval(clickLoop);
+
+            // ĐÃ FIX BỎ CHỮ 'const': Để nó dùng chung chìa khóa tắt ở trên
+            clickLoop = setInterval(() => {
                 if (botState === 'HUB' && clickAttempts < 10) {
                     console.log(`[Hub] Đang click La bàn lần ${clickAttempts + 1}...`);
                     bot.activateItem(); 
@@ -48,7 +53,7 @@ function createBot() {
                 } else {
                     clearInterval(clickLoop);
                 }
-            }, 2000); // Cứ 2 giây click 1 lần
+            }, 2000); 
         }
     });
 
@@ -60,33 +65,27 @@ function createBot() {
         }
     });
 
-    // 3. XỬ LÝ MENU CLICK SERVER
-    // 3. XỬ LÝ MENU CLICK SERVER (BẢN NHẮM MẮT CLICK CHẬM THEO TỌA ĐỘ 20 VÀ 14)
+    // 3. XỬ LÝ MENU CLICK SERVER (BẢN NHẮM MẮT CLICK CHẬM)
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
         
-        // Rút điện la bàn ngay lập tức
+        // Rút điện la bàn ngay lập tức (Lần này là tắt thật 100%)
         if (clickLoop) clearInterval(clickLoop);
 
         console.log(`[Menu] Bảng đã mở... Đang chờ server load 3 giây...`);
 
         try {
-            // Bước 1: Đợi 3 giây cho bảng 1 load đầy đủ
             await sleep(3000); 
 
-            // Cứ nhắm mắt nhấp slot 20 (Block Cỏ)
             console.log(`[Menu 1] Nhấp thẳng vào slot 20 (Cỏ)...`);
             await bot.clickWindow(20, 0, 0); 
 
-            // Bước 2: Đợi 2.5 giây cho server kịp chuyển sang bảng 2
             console.log(`[Menu] Đang chờ 2.5 giây để mở bảng 2...`);
             await sleep(2500); 
 
-            // Nhắm mắt nhấp tiếp slot 14 (Kiếm Vàng)
             console.log(`[Menu 2] Nhấp thẳng vào slot 14 (Kiếm Vàng)...`);
             await bot.clickWindow(14, 0, 0); 
             
-            // Vào farm
             botState = 'FARMING'; 
             console.log('[Menu] Đã xong chuỗi click! 8 giây nữa bắt đầu farm...');
             setTimeout(() => startFarmingProcess(bot), 8000);
@@ -95,6 +94,7 @@ function createBot() {
             console.log('Lỗi click GUI:', err);
         }
     });
+
     // 4. HỒI SINH
     bot.on('death', async () => {
         console.log('[Chết] Đang hồi sinh...');
@@ -106,37 +106,46 @@ function createBot() {
     bot.on('end', () => {
         console.log('[Mất mạng] Đợi 1 phút rồi tự kết nối lại...');
         botState = 'HUB'; 
+        isLoggingIn = false;
         setTimeout(createBot, 60000); 
     });
 
     bot.on('error', err => console.log('Lỗi:', err));
 }
 
-// 6. LOGIC FARM CHÍNH THỨC
+// 6. LOGIC FARM CHÍNH THỨC (BẢN FIX CHUẨN NHỊP ĐIỆU)
 async function startFarmingProcess(bot) {
     console.log('[Farm] Đang dọn dẹp Party cũ...');
-    bot.chat('/party quit'); // Dời lệnh này xuống đây cho an toàn
-    await sleep(1500);
+    bot.chat('/party quit'); 
+    await sleep(2000); // Tăng lên 2s cho chắc ăn
 
     console.log('[Farm] Dịch chuyển về nhà...');
     bot.chat('/home');
-    await sleep(3000); 
+    await sleep(5000); // Tăng lên 5s để đảm bảo mạng load xong map ở nhà
 
-    console.log('[Farm] Đè Shift và múa combo...');
+    console.log('[Farm] Bắt đầu chuỗi Combo: Đè Shift...');
     bot.setControlState('sneak', true); 
-    await sleep(500);
+    await sleep(800); // Đợi 1 nhịp cho server nhận diện là đang đè Shift
 
-    bot.swingArm('right'); 
-    await sleep(300);
-    bot.activateItem(); 
-    await sleep(300);
-    bot.activateItem(); 
-    await sleep(300);
+    console.log('[Farm] Múa: Chuột TRÁI (1 lần)');
+    bot.swingArm('right'); // Trong Minecraft, swingArm('right') chính là click chuột trái
+    await sleep(500);
+    
+    console.log('[Farm] Múa: Chuột PHẢI (Lần 1)');
     bot.activateItem(); 
     await sleep(500);
+    
+    console.log('[Farm] Múa: Chuột PHẢI (Lần 2)');
+    bot.activateItem(); 
+    await sleep(500);
+    
+    console.log('[Farm] Múa: Chuột PHẢI (Lần 3)');
+    bot.activateItem(); 
+    await sleep(800);
 
+    console.log('[Farm] Xong combo, Nhả Shift ra...');
     bot.setControlState('sneak', false); 
-    await sleep(500);
+    await sleep(1500); // Đứng đợi 1.5s trước khi ngồi cho mượt
 
     console.log('[Farm] An tọa bằng /sit...');
     bot.chat('/sit');
