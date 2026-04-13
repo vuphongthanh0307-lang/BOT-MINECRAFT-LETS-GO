@@ -11,7 +11,7 @@ app.listen(port, () => console.log(`[Web] Server đang chạy trên port ${port}
 process.on('uncaughtException', (err) => console.log('[Khiên Bất Tử] Chặn lỗi:', err.message));
 process.on('unhandledRejection', (err) => console.log('[Khiên Bất Tử] Lỗi Promise:', err.message));
 
-// === ĐÂY LÀ 2 DÒNG THẦN THÁNH CHỮA CÁI LỖI TRONG ẢNH CỦA BRO ===
+// HÀM NGỦ CHỐNG SPAM
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const randomSleep = (min, max) => sleep(Math.floor(Math.random() * (max - min + 1) + min));
 
@@ -94,7 +94,9 @@ function createBot() {
             await bot.clickWindow(14, 0, 0); 
             
             botState = 'FARMING'; 
-            setTimeout(() => startFarmingProcess(bot), 8000);
+            console.log('[Menu] Thành công! Đợi 15 giây cho map load mượt (Chống lag 6h sáng)...');
+            // Đã đổi thành 15 giây đợi load map
+            setTimeout(() => startFarmingProcess(bot), 15000); 
         } catch (err) {
             console.log('Lỗi click GUI:', err.message);
         }
@@ -133,7 +135,7 @@ function createBot() {
 }
 
 // ====================================================
-// 6. KỊCH BẢN FARM (HOÀN CHỈNH)
+// 6. KỊCH BẢN FARM (FIX LỖI NGỒI Ở SPAWN + GIÃN NHỊP COMBO)
 // ====================================================
 async function startFarmingProcess(bot) {
     if (isComboRunning) return; 
@@ -142,40 +144,42 @@ async function startFarmingProcess(bot) {
     try {
         console.log('[Farm] Đang dọn dẹp Party cũ...');
         bot.chat('/party quit'); 
-        await sleep(1500);
+        await randomSleep(1500, 2000);
 
         console.log('[Farm] Thử vào lại Party mặc định (18110998125)...');
         bot.chat('/party join 18110998125');
-        await randomSleep(1500, 2000); 
+        await randomSleep(2000, 3000); 
         
         console.log('[Farm] Chuẩn bị đồ nghề: Chọn ô số 1 trên tay...');
         bot.setQuickBarSlot(0); 
-        await sleep(1000);
+        await randomSleep(1000, 1500);
 
         console.log('[Farm] Ra /spawn...');
         bot.chat('/spawn');
-        await sleep(5000); 
+        await randomSleep(6000, 8000); // Đợi load map spawn
 
         console.log('[Farm] Bắt đầu chuỗi Combo...');
         bot.setControlState('sneak', true); 
-        await sleep(800); 
+        await randomSleep(800, 1200); 
         bot.swingArm('right'); 
-        await sleep(500);
+        await randomSleep(600, 1000);
         bot.activateItem(); 
-        await sleep(500);
+        await randomSleep(600, 1000);
         bot.activateItem(); 
-        await sleep(500);
+        await randomSleep(600, 1000);
         bot.activateItem(); 
-        await sleep(800);
+        await randomSleep(1000, 1500);
 
         bot.clearControlStates(); 
-        await sleep(1500); 
+        await randomSleep(2000, 3000); 
 
-        console.log('[Farm] Về nhà /home...');
+        console.log('[Farm] Đang về nhà /home... Đợi load map...');
         bot.chat('/home');
-        await sleep(5000);
         
-        console.log('[Farm] Ngồi xuống /sit...');
+        // CHỐT CHẶN CUỐI CÙNG: Đợi 8 đến 10 giây để chắc chắn đã về đến nhà mới ngồi
+        await randomSleep(8000, 10000); 
+        
+        console.log('[Farm] Đã về đến nhà, an tọa /sit...');
         bot.chat('/sit');
 
         if (antiAfkLoop) clearInterval(antiAfkLoop);
