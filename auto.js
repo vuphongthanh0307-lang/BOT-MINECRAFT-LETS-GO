@@ -1,5 +1,6 @@
 const express = require('express');
 const mineflayer = require('mineflayer');
+const readline = require('readline'); // Kéo thêm module đọc bàn phím
 
 // TẠO WEB SERVER (CHỐNG SLEEP)
 const app = express();
@@ -16,6 +17,7 @@ const randomSleep = (min, max) => sleep(Math.floor(Math.random() * (max - min + 
 
 // BIẾN TRẠNG THÁI & NGỦ ĐÔNG
 let botState = 'HUB'; 
+let currentBot; // Biến linh hồn để giữ kết nối Chat
 let clickLoop; 
 let antiAfkLoop; 
 let isLoggingIn = false; 
@@ -31,7 +33,21 @@ function createBot() {
         version: '1.12.2',
         viewDistance: 'tiny', 
         checkTimeoutInterval: 90000,
-        respawn: false // [ĐÃ FIX] KHÓA NÚT TỰ ĐỘNG HỒI SINH
+        respawn: false 
+    });
+
+    currentBot = bot; // Gán linh hồn bot để chát từ xa
+
+    // ==========================================
+    // MẮT THẦN: SOI CHAT SERVER (CÓ MÀU NHƯ GAME)
+    // ==========================================
+    bot.on('message', (jsonMsg) => {
+        // Hàm toAnsi() giúp console hiện màu xanh đỏ tím vàng y xì bảng chat Minecraft
+        if (jsonMsg.toAnsi) {
+            console.log(jsonMsg.toAnsi());
+        } else {
+            console.log(jsonMsg.toString());
+        }
     });
 
     bot.on('spawn', async () => {
@@ -72,9 +88,8 @@ function createBot() {
                                   message.toLowerCase().includes('giết'));
         
         if (isKilledByPlayer) {
-            // [ĐÃ FIX] CHỈ IN CẢNH BÁO, KHÔNG XÀI bot.quit() NỮA
             console.log('[RÚT LUI KHẨN CẤP] Bị KS! Nằm im giả chết chờ server kick AFK...');
-            shouldReconnect = false; // Đánh dấu để lúc bị kick nó không tự vào lại nữa
+            shouldReconnect = false; 
         }
 
         if (message.includes('không thể ngồi trong không khí')) {
@@ -106,14 +121,11 @@ function createBot() {
     });
 
     bot.on('death', async () => {
-        // [ĐÃ FIX] KHI CHẾT LÀ NẰM IM RU LUÔN, XÓA HẾT VÒNG LẶP AFK VÀ FARM
         console.log('[CẢNH BÁO] Bot đã tử trận! Đang nằm phơi xác tại trận địa...');
         isComboRunning = false; 
         bot.clearControlStates(); 
         if (antiAfkLoop) clearInterval(antiAfkLoop);
         if (clickLoop) clearInterval(clickLoop);
-        
-        // Không gọi lại hàm startFarmingProcess nữa để nó nằm chết dí đó
     });
 
     bot.on('end', () => {
@@ -121,7 +133,7 @@ function createBot() {
             console.log('[SHUTDOWN] Server đã kick nick ra ngoài do AFK/Bị KS!');
             if (antiAfkLoop) clearInterval(antiAfkLoop); 
             if (clickLoop) clearInterval(clickLoop);
-            return; // Dừng hoàn toàn bot, không kết nối lại
+            return; 
         }
 
         botState = 'HUB'; 
@@ -189,7 +201,7 @@ async function startFarmingProcess(bot) {
                 bot.swingArm('right'); 
                 setTimeout(() => { if (bot.chat) bot.chat('/sit'); }, 1000);
             }
-        }, 12000000); 
+        }, 1200000); // Đã hạ xuống 3 phút để an toàn chống Kick AFK
         
     } catch (err) {
         console.log('[Farm] Lỗi:', err.message);
@@ -197,5 +209,22 @@ async function startFarmingProcess(bot) {
         isComboRunning = false; 
     }
 }
+
+// ==========================================
+// TÍNH NĂNG CHAT TỪ REPLIT VÀO GAME
+// ==========================================
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+rl.on('line', (input) => {
+    if (currentBot) {
+        currentBot.chat(input); // Gửi nội dung bro gõ vào server Minecraft
+        console.log(`[Bạn Đã Chat]: ${input}`);
+    } else {
+        console.log('[Lỗi] Bot chưa vào game, không chat được!');
+    }
+});
 
 createBot();
