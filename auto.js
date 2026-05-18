@@ -190,7 +190,7 @@ async function startFarmingProcess(bot) {
 
         // BAY ĐẾN BÃI TRƯỚC RỒI MỚI MÚA TAY
         bot.chat('/spawn');
-        await randomSleep(20000, 25000); 
+        await randomSleep(30000, 35000); 
 
         // ==========================================
         // BƯỚC MỚI: LIA CHUỘT TRÁI 80 ĐỘ & PHI THÂN 1 PHÁT
@@ -201,7 +201,7 @@ async function startFarmingProcess(bot) {
         // 💡 Mẹo nhỏ: Trục toạ độ của Minecraft hơi "dị", hướng xoay trái là CỘNG thêm Yaw. 
         // Nếu vô game bro thấy nó lỡ xoay sang phải thì đổi dấu "+" thành dấu "-" nhé!
         const currentYaw = bot.entity.yaw;
-        const targetYaw = currentYaw + (80 * Math.PI / 180); 
+        const targetYaw = currentYaw + (72 * Math.PI / 180); 
         const currentPitch = bot.entity.pitch; // Giữ nguyên độ ngước nhìn hiện tại
         
         // Xoay chuột (true = quay ngay lập tức, không rườm rà)
