@@ -2,7 +2,7 @@ const express = require('express');
 const mineflayer = require('mineflayer');
 const readline = require('readline'); // Kéo thêm module đọc bàn phím
 
-const RECONNECT_DELAY = 240000; // 3 phút vào lại 1 lần
+const RECONNECT_DELAY = 240000; // 4 phút vào lại 1 lần (theo code bro gửi là 240000)
 
 // TẠO WEB SERVER (CHỐNG SLEEP)
 const app = express();
@@ -76,6 +76,23 @@ function createBot() {
     });
 
     bot.on('messagestr', (message) => {
+        const lowerMsg = message.toLowerCase();
+
+        // ==========================================
+        // CẢM BIẾN CHỐNG KẸT HUB (TỰ RESET TRẠNG THÁI)
+        // ==========================================
+        if (lowerMsg.includes('kicked from') || lowerMsg.includes('bảo trì') || lowerMsg.includes('đã đóng')) {
+            if (botState === 'FARMING') {
+                console.log('[Hệ thống] Bị ném về Sảnh! Reset trạng thái để tự động đục lỗ vào lại...');
+                botState = 'HUB';
+                isLoggingIn = false; 
+                isComboRunning = false;
+                if (antiAfkLoop) clearInterval(antiAfkLoop);
+                if (clickLoop) clearInterval(clickLoop);
+            }
+        }
+        // ==========================================
+
         if (message.includes('/pt join')) {
             const match = message.match(/\/pt join (\S+)/);
             if (match) {
@@ -84,9 +101,9 @@ function createBot() {
         }
 
         const isKilledByPlayer = message.includes(bot.username) && 
-                                 (message.toLowerCase().includes('slain by') || 
-                                  message.toLowerCase().includes('slained by') || 
-                                  message.toLowerCase().includes('giết'));
+                                 (lowerMsg.includes('slain by') || 
+                                  lowerMsg.includes('slained by') || 
+                                  lowerMsg.includes('giết'));
         
         if (isKilledByPlayer) {
             console.log('[RÚT LUI KHẨN CẤP] Bị KS! Nằm im giả chết chờ server kick AFK...');
@@ -169,13 +186,26 @@ async function startFarmingProcess(bot) {
 
     try {
         bot.setQuickBarSlot(0); 
-        await randomSleep(10000, 12000);
+        await randomSleep(1500, 2000);
 
-        // BẮT ĐẦU ĐÈ SHIFT
+        // BAY ĐẾN BÃI TRƯỚC RỒI MỚI MÚA TAY
+        bot.chat('/spawn');
+        await randomSleep(8000, 10000); 
+
+        // ==========================================
+        // BƯỚC MỚI: ĐI LÊN KHOẢNG 2 GIÂY
+        // ==========================================
+        console.log('[Farm] Tới Spawn rồi, đi lên phía trước 2 giây cho thoáng...');
+        bot.setControlState('forward', true); // Bắt đầu nhấn phím W
+        await randomSleep(2000, 2200); // Đợi khoảng 2 giây
+        
+        bot.clearControlStates(); // Nhả phím W ra để dừng lại
+        await randomSleep(500, 800); // Khựng lại một nhịp nhỏ cho giống người thật trước khi múa
+
+        // BẮT ĐẦU ĐÈ SHIFT VÀ MÚA TAY
         bot.setControlState('sneak', true); 
         await randomSleep(800, 1200); 
         
-        // COMBO TRÁI - PHẢI - PHẢI - PHẢI
         bot.swingArm('right'); 
         await randomSleep(600, 1000);
         bot.activateItem(); 
@@ -186,18 +216,11 @@ async function startFarmingProcess(bot) {
         await randomSleep(1000, 1500);
 
         // NHẢ SHIFT NGAY TẠI ĐÂY
-        bot.setControlState('sneak', false);
-
-        bot.chat('/spawn');
-        await randomSleep(8000, 10000); 
-
- 
-        
-        // Đề phòng hờ, xóa toàn bộ phím đang dính 
+        bot.setControlState('sneak', false); 
         bot.clearControlStates(); 
         await randomSleep(2000, 3000); 
 
-        bot.chat('/home'); // Xong combo thì bay về bãi
+        bot.chat('/home'); // Xong combo thì bay về bãi Farm
         await randomSleep(10000, 12000); 
         
         // BƯỚC CUỐI CÙNG: NGỒI XUỐNG VÀ BẬT AUTO KIT
@@ -213,7 +236,7 @@ async function startFarmingProcess(bot) {
                 bot.chat('/kit tanthu');
                 console.log(`[${new Date().toLocaleTimeString()}] [Auto-Kit] Đã gõ /kit tanthu lụm đồ!`);
             }
-        }, 600000); // 600000 ms = đúng 10 phút
+        }, 600000); // 10 phút
         
     } catch (err) {
         console.log('[Farm] Lỗi:', err.message);
