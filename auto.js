@@ -193,14 +193,39 @@ async function startFarmingProcess(bot) {
         await randomSleep(8000, 10000); 
 
         // ==========================================
-        // BƯỚC MỚI: ĐI LÊN KHOẢNG 2 GIÂY
+        // BƯỚC MỚI: LIA CHUỘT TRÁI 80 ĐỘ & PHI THÂN 1 PHÁT
         // ==========================================
-        console.log('[Farm] Tới Spawn rồi, đi lên phía trước 2 giây cho thoáng...');
-        bot.setControlState('forward', true); // Bắt đầu nhấn phím W
-        await randomSleep(2000, 2200); // Đợi khoảng 2 giây
+        console.log('[Farm] Tới Spawn rồi, lia chuột 80 độ sang trái...');
         
-        bot.clearControlStates(); // Nhả phím W ra để dừng lại
-        await randomSleep(500, 800); // Khựng lại một nhịp nhỏ cho giống người thật trước khi múa
+        // Lấy góc nhìn hiện tại và xoay trái 80 độ (phải đổi sang Radian)
+        // 💡 Mẹo nhỏ: Trục toạ độ của Minecraft hơi "dị", hướng xoay trái là CỘNG thêm Yaw. 
+        // Nếu vô game bro thấy nó lỡ xoay sang phải thì đổi dấu "+" thành dấu "-" nhé!
+        const currentYaw = bot.entity.yaw;
+        const targetYaw = currentYaw + (80 * Math.PI / 180); 
+        const currentPitch = bot.entity.pitch; // Giữ nguyên độ ngước nhìn hiện tại
+        
+        // Xoay chuột (true = quay ngay lập tức, không rườm rà)
+        await bot.look(targetYaw, currentPitch, true); 
+        await randomSleep(300, 500); // Khựng lại một nhịp nhỏ sau khi lia chuột
+
+        console.log('[Farm] Vận nội công W + Sprint + Space nhảy đúng 1 phát...');
+        bot.setControlState('forward', true);
+        bot.setControlState('sprint', true);
+        bot.setControlState('jump', true); // Ấn Space
+
+        // Thời gian bay trên không của 1 cú nhảy trong game là tầm 500ms
+        await sleep(500);
+        bot.setControlState('jump', false); // Nhả Space ra để chốt 1 lần nhảy duy nhất
+        
+        // Vẫn giữ đè W + Sprint thêm 1 xíu để nó bay hết đà rơi xuống đất
+        await randomSleep(800, 1000); 
+        
+        // Phanh gấp bằng phanh ABS
+        bot.clearControlStates(); 
+        console.log('[Farm] Tiếp đất an toàn, đứng yên lấy hơi chuẩn bị múa...');
+        
+        // Đứng yên thở khoảng 1.5 - 2 giây
+        await randomSleep(1500, 2000);
 
         // BẮT ĐẦU ĐÈ SHIFT VÀ MÚA TAY
         bot.setControlState('sneak', true); 
