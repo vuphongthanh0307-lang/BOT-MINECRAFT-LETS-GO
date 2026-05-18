@@ -190,7 +190,7 @@ async function startFarmingProcess(bot) {
 
         // BAY ĐẾN BÃI TRƯỚC RỒI MỚI MÚA TAY
         bot.chat('/spawn');
-        await randomSleep(8000, 10000); 
+        await randomSleep(20000, 25000); 
 
         // ==========================================
         // BƯỚC MỚI: LIA CHUỘT TRÁI 80 ĐỘ & PHI THÂN 1 PHÁT
