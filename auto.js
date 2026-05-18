@@ -2,7 +2,7 @@ const express = require('express');
 const mineflayer = require('mineflayer');
 const readline = require('readline'); // Kéo thêm module đọc bàn phím
 
-const RECONNECT_DELAY = 240000; // 4 phút vào lại 1 lần (theo code bro gửi là 240000)
+const RECONNECT_DELAY = 240000; // 3 phút vào lại 1 lần
 
 // TẠO WEB SERVER (CHỐNG SLEEP)
 const app = express();
@@ -193,38 +193,30 @@ async function startFarmingProcess(bot) {
         await randomSleep(30000, 35000); 
 
         // ==========================================
-        // BƯỚC MỚI: LIA CHUỘT TRÁI 80 ĐỘ & PHI THÂN 1 PHÁT
+        // BƯỚC MỚI: LIA CHUỘT TRÁI 72 ĐỘ & PHI THÂN 1 PHÁT
         // ==========================================
-        console.log('[Farm] Tới Spawn rồi, lia chuột 80 độ sang trái...');
+        console.log('[Farm] Tới Spawn rồi, lia chuột 72 độ sang trái...');
         
-        // Lấy góc nhìn hiện tại và xoay trái 80 độ (phải đổi sang Radian)
-        // 💡 Mẹo nhỏ: Trục toạ độ của Minecraft hơi "dị", hướng xoay trái là CỘNG thêm Yaw. 
-        // Nếu vô game bro thấy nó lỡ xoay sang phải thì đổi dấu "+" thành dấu "-" nhé!
         const currentYaw = bot.entity.yaw;
         const targetYaw = currentYaw + (72 * Math.PI / 180); 
-        const currentPitch = bot.entity.pitch; // Giữ nguyên độ ngước nhìn hiện tại
+        const currentPitch = bot.entity.pitch; 
         
-        // Xoay chuột (true = quay ngay lập tức, không rườm rà)
         await bot.look(targetYaw, currentPitch, true); 
-        await randomSleep(300, 500); // Khựng lại một nhịp nhỏ sau khi lia chuột
+        await randomSleep(300, 500); 
 
         console.log('[Farm] Vận nội công W + Sprint + Space nhảy đúng 1 phát...');
         bot.setControlState('forward', true);
         bot.setControlState('sprint', true);
-        bot.setControlState('jump', true); // Ấn Space
+        bot.setControlState('jump', true); 
 
-        // Thời gian bay trên không của 1 cú nhảy trong game là tầm 500ms
         await sleep(500);
-        bot.setControlState('jump', false); // Nhả Space ra để chốt 1 lần nhảy duy nhất
+        bot.setControlState('jump', false); 
         
-        // Vẫn giữ đè W + Sprint thêm 1 xíu để nó bay hết đà rơi xuống đất
         await randomSleep(800, 1000); 
         
-        // Phanh gấp bằng phanh ABS
         bot.clearControlStates(); 
         console.log('[Farm] Tiếp đất an toàn, đứng yên lấy hơi chuẩn bị múa...');
         
-        // Đứng yên thở khoảng 1.5 - 2 giây
         await randomSleep(1500, 2000);
 
         // BẮT ĐẦU ĐÈ SHIFT VÀ MÚA TAY
@@ -248,20 +240,17 @@ async function startFarmingProcess(bot) {
         bot.chat('/home'); // Xong combo thì bay về bãi Farm
         await randomSleep(10000, 12000); 
         
-        // BƯỚC CUỐI CÙNG: NGỒI XUỐNG VÀ BẬT AUTO KIT
+        // BƯỚC CUỐI CÙNG: NGỒI XUỐNG NHẬP ĐỊNH
         bot.chat('/sit');
-        console.log('[Farm] Đã đến bãi, ngồi xuống và khởi động Auto Kit (10 phút/lần)!');
+        console.log('[Farm] Đã đến bãi, ngồi xuống nhập định (Tắt Auto Kit)!');
 
         failCount = 0; 
 
-        // VÒNG LẶP CHỐNG AFK: ĐÚNG 10 PHÚT GÕ /KIT TANTHU 1 LẦN
-        if (antiAfkLoop) clearInterval(antiAfkLoop);
-        antiAfkLoop = setInterval(() => {
-            if (botState === 'FARMING' && !isComboRunning) {
-                bot.chat('/kit tanthu');
-                console.log(`[${new Date().toLocaleTimeString()}] [Auto-Kit] Đã gõ /kit tanthu lụm đồ!`);
-            }
-        }, 600000); // 10 phút
+        // XÓA BỎ HOÀN TOÀN AUTO KIT
+        if (antiAfkLoop) {
+            clearInterval(antiAfkLoop);
+            antiAfkLoop = null; 
+        }
         
     } catch (err) {
         console.log('[Farm] Lỗi:', err.message);
