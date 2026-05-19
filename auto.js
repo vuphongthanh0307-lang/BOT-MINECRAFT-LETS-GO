@@ -221,11 +221,11 @@ async function startFarmingProcess(bot) {
 
     try {
         bot.setQuickBarSlot(0); 
-        await randomSleep(1500, 2000);
+        await randomSleep(20000, 22000);
 
         // BAY ĐẾN BÃI TRƯỚC RỒI MỚI MÚA TAY
         bot.chat('/spawn');
-        await randomSleep(30000, 35000); 
+        await randomSleep(5000, 7000); 
 
         // ==========================================
         // BƯỚC MỚI: LIA CHUỘT TRÁI 72 ĐỘ & PHI THÂN 2 PHÁT
