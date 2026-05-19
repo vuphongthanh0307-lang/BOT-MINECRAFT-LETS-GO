@@ -228,7 +228,7 @@ async function startFarmingProcess(bot) {
         await randomSleep(30000, 35000); 
 
         // ==========================================
-        // BƯỚC MỚI: LIA CHUỘT TRÁI 72 ĐỘ & PHI THÂN 1 PHÁT
+        // BƯỚC MỚI: LIA CHUỘT TRÁI 72 ĐỘ & PHI THÂN 2 PHÁT
         // ==========================================
         console.log('[Farm] Tới Spawn rồi, lia chuột 72 độ sang trái...');
         
@@ -239,16 +239,29 @@ async function startFarmingProcess(bot) {
         await bot.look(targetYaw, currentPitch, true); 
         await randomSleep(300, 500); 
 
-        console.log('[Farm] Vận nội công W + Sprint + Space nhảy đúng 1 phát...');
+        console.log('[Farm] Vận nội công W + Sprint + Space nhảy liên tiếp 2 phát...');
+        
+        // Bắt đầu đè ga chạy nhanh
         bot.setControlState('forward', true);
         bot.setControlState('sprint', true);
+        
+        // --- NHẢY PHÁT 1 ---
         bot.setControlState('jump', true); 
+        await sleep(500); // Bay trên không 0.5s
+        bot.setControlState('jump', false); // Nhả Space để tiếp đất
+        
+        // Khựng lại xíu cho nó chạm đất lấy đà (vẫn đang đè W chạy nhanh)
+        await randomSleep(300, 400); 
 
-        await sleep(500);
-        bot.setControlState('jump', false); 
+        // --- NHẢY PHÁT 2 ---
+        bot.setControlState('jump', true); // Đạp đất nảy lên phát 2
+        await sleep(500); // Bay tiếp 0.5s
+        bot.setControlState('jump', false); // Nhả Space ra
         
-        await randomSleep(800, 1000); 
+        // Giữ W + Sprint thêm 1 xíu để nó bay hết đà phát thứ 2 rơi xuống
+        await randomSleep(600, 800); 
         
+        // Phanh gấp bằng phanh ABS
         bot.clearControlStates(); 
         console.log('[Farm] Tiếp đất an toàn, đứng yên lấy hơi chuẩn bị múa...');
         
