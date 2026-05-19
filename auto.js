@@ -2,7 +2,7 @@ const express = require('express');
 const mineflayer = require('mineflayer');
 const readline = require('readline'); // Kéo thêm module đọc bàn phím
 
-const RECONNECT_DELAY = 240000; // 3 phút vào lại 1 lần
+const RECONNECT_DELAY = 180000; // 3 phút vào lại 1 lần
 
 // TẠO WEB SERVER (CHỐNG SLEEP)
 const app = express();
@@ -35,7 +35,7 @@ function createBot() {
         version: '1.12.2',
         viewDistance: 'tiny', 
         checkTimeoutInterval: 90000,
-        respawn: false 
+        respawn: false // Giữ false để tự ấn bằng tay trong code
     });
 
     currentBot = bot; 
@@ -54,29 +54,56 @@ function createBot() {
     bot.on('spawn', async () => {
         if (botState === 'HUB' && !isLoggingIn) {
             isLoggingIn = true;
-            console.log('[Hub] Đã vào sảnh, chuẩn bị đăng nhập...');
+            console.log('[Hub] Đã vào server, chuẩn bị đăng nhập...');
             await sleep(2000);
             bot.chat('/l Windvu2193'); 
-            await sleep(6000); 
-
-            console.log('[Hub] Cầm La bàn lên tay...');
-            bot.setQuickBarSlot(4); 
-            await sleep(1000);
-            
-            if (clickLoop) clearInterval(clickLoop);
-            clickLoop = setInterval(() => {
-                if (botState === 'HUB') {
-                    console.log(`[Hub] Đang click La bàn...`);
-                    bot.activateItem(); 
-                } else {
-                    clearInterval(clickLoop);
-                }
-            }, 2500); 
+            console.log('[Hub] Đã gửi lệnh login! Đang dỏng tai nghe ngóng Server phản hồi...');
+            // Chờ Mắt Thần 3.0 ra tay, dẹp luôn cái đếm giây mù mờ
         }
     });
 
     bot.on('messagestr', (message) => {
         const lowerMsg = message.toLowerCase();
+
+        // ==========================================
+        // MẮT THẦN 3.0: NGHE NGÓNG TỪ KHÓA CHUẨN XÁC
+        // ==========================================
+        
+        // 1. CHẮC CHẮN Ở HUB NẾU THẤY "BẠN SỞ HỮU"
+        if (botState === 'HUB' && lowerMsg.includes('bạn sở hữu')) {
+            console.log('[Mắt Thần] Bắt được chữ "Bạn sở hữu"! Đích thị là đang ở Sảnh (Hub).');
+            console.log('[Hub] Cầm La bàn lên tay và đục lỗ vô cụm...');
+            
+            bot.setQuickBarSlot(4); 
+            
+            let clickCount = 0;
+            if (clickLoop) clearInterval(clickLoop);
+            clickLoop = setInterval(() => {
+                if (botState === 'HUB') {
+                    console.log(`[Hub] Đang click La bàn...`);
+                    bot.activateItem(); 
+                    clickCount++;
+
+                    // Nếu kẹt la bàn 15s không vô được, ép khởi động Farm
+                    if (clickCount >= 6) {
+                        console.log('[Cứu Hộ] Click 15s không có Menu! Hủy vòng lặp, ép khởi động Farm...');
+                        clearInterval(clickLoop);
+                        botState = 'FARMING';
+                        startFarmingProcess(bot);
+                    }
+                } else {
+                    clearInterval(clickLoop);
+                }
+            }, 2500); 
+        }
+
+        // 2. NHẬN DIỆN ĐÃ VÀO GAME BỎ QUA BƯỚC LA BÀN
+        if (botState === 'HUB' && (lowerMsg.includes('boss') || lowerMsg.includes('tài xỉu') || lowerMsg.includes('nô lệ') || lowerMsg.includes('thế giới') || lowerMsg.includes('thủ lĩnh'))) {
+            console.log('[Mắt Thần] Nhận diện tin nhắn Game Farm! Bỏ qua La Bàn, tiến hành chạy bãi...');
+            botState = 'FARMING';
+            if (clickLoop) clearInterval(clickLoop);
+            setTimeout(() => startFarmingProcess(bot), 3000);
+        }
 
         // ==========================================
         // CẢM BIẾN CHỐNG KẸT HUB (TỰ RESET TRẠNG THÁI)
@@ -91,7 +118,6 @@ function createBot() {
                 if (clickLoop) clearInterval(clickLoop);
             }
         }
-        // ==========================================
 
         if (message.includes('/pt join')) {
             const match = message.match(/\/pt join (\S+)/);
@@ -138,12 +164,21 @@ function createBot() {
         }
     });
 
+    // ==========================================
+    // SỰ KIỆN TỬ TRẬN: PHÂN BIỆT HUB VÀ FARM
+    // ==========================================
     bot.on('death', async () => {
-        console.log('[CẢNH BÁO] Bot đã tử trận! Đang nằm phơi xác tại trận địa...');
         isComboRunning = false; 
         bot.clearControlStates(); 
         if (antiAfkLoop) clearInterval(antiAfkLoop);
         if (clickLoop) clearInterval(clickLoop);
+
+        if (botState === 'HUB') {
+            console.log('[CẢNH BÁO] Bot chết ở Sảnh (Hub)! Đang tự động ấn Hồi Sinh (Respawn)...');
+            setTimeout(() => { bot.respawn(); }, 2000); 
+        } else {
+            console.log('[CẢNH BÁO] Bot bị giết trong cụm Farm! Nằm phơi xác không làm gì cả...');
+        }
     });
 
     bot.on('end', () => {
