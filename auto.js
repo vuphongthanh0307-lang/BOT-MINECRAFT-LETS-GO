@@ -283,8 +283,13 @@ async function startFarmingProcess(bot) {
         // NHẢ SHIFT NGAY TẠI ĐÂY
         bot.setControlState('sneak', false); 
         bot.clearControlStates(); 
-        await randomSleep(2000, 3000); 
+        await randomSleep(2000, 3000);
 
+        bot.setControlState('forward', true);
+        await sleep(500); 
+        bot.clearControlStates(); 
+        await randomSleep(3000, 5000);
+        
         bot.chat('/home'); // Xong combo thì bay về bãi Farm
         await randomSleep(10000, 12000); 
         
