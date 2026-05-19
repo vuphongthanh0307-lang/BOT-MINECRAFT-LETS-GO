@@ -35,7 +35,7 @@ function createBot() {
         username: 'winlxag5553', 
         version: '1.12.2',
         viewDistance: 'tiny', 
-        checkTimeoutInterval: 90000,
+        checkTimeoutInterval: 120000,
         respawn: false // Giữ false để tự ấn bằng tay trong code
     });
 
