@@ -310,7 +310,7 @@ async function startFarmingProcess(bot) {
         await randomSleep(3000, 5000);
         
         bot.chat('/home'); // Xong combo thì bay về bãi Farm
-        await randomSleep(10000, 12000); 
+        await randomSleep(7000, 9000); 
         
         // BƯỚC CUỐI CÙNG: NGỒI XUỐNG NHẬP ĐỊNH
         bot.chat('/sit');
