@@ -2,7 +2,7 @@ const express = require('express');
 const mineflayer = require('mineflayer');
 const readline = require('readline'); // Kéo thêm module đọc bàn phím
 
-const RECONNECT_DELAY = 180000; // 3 phút vào lại 1 lần
+const RECONNECT_DELAY = 300000; // 5 phút vào lại 1 lần 
 
 // TẠO WEB SERVER (CHỐNG SLEEP)
 const app = express();
@@ -22,6 +22,7 @@ let botState = 'HUB';
 let currentBot; 
 let clickLoop; 
 let antiAfkLoop; 
+let farmTimeout; 
 let isLoggingIn = false; 
 let isComboRunning = false; 
 let shouldReconnect = true; 
@@ -52,30 +53,22 @@ function createBot() {
     });
 
     bot.on('spawn', async () => {
-        if (botState === 'HUB' && !isLoggingIn) {
+        if (!isLoggingIn) {
             isLoggingIn = true;
             console.log('[Hub] Đã vào server, chuẩn bị đăng nhập...');
             await sleep(2000);
             bot.chat('/l Windvu2193'); 
             console.log('[Hub] Đã gửi lệnh login! Đang dỏng tai nghe ngóng Server phản hồi...');
-            // Chờ Mắt Thần 3.0 ra tay, dẹp luôn cái đếm giây mù mờ
         }
     });
 
     bot.on('messagestr', (message) => {
         const lowerMsg = message.toLowerCase();
 
-        // ==========================================
-        // MẮT THẦN 3.0: NGHE NGÓNG TỪ KHÓA CHUẨN XÁC
-        // ==========================================
-        
-        // 1. CHẮC CHẮN Ở HUB NẾU THẤY "BẠN SỞ HỮU"
+        // 1. MỚI JOIN TỪ NGOÀI VÀO -> CẦN BẤM LA BÀN
         if (botState === 'HUB' && lowerMsg.includes('bạn sở hữu')) {
-            console.log('[Mắt Thần] Bắt được chữ "Bạn sở hữu"! Đích thị là đang ở Sảnh (Hub).');
-            console.log('[Hub] Cầm La bàn lên tay và đục lỗ vô cụm...');
-            
+            console.log('[Mắt Thần] Mới join từ ngoài vào! Cầm La bàn đục lỗ vô cụm...');
             bot.setQuickBarSlot(4); 
-            
             let clickCount = 0;
             if (clickLoop) clearInterval(clickLoop);
             clickLoop = setInterval(() => {
@@ -83,10 +76,7 @@ function createBot() {
                     console.log(`[Hub] Đang click La bàn...`);
                     bot.activateItem(); 
                     clickCount++;
-
-                    // Nếu kẹt la bàn 15s không vô được, ép khởi động Farm
                     if (clickCount >= 6) {
-                        console.log('[Cứu Hộ] Click 15s không có Menu! Hủy vòng lặp, ép khởi động Farm...');
                         clearInterval(clickLoop);
                         botState = 'FARMING';
                         startFarmingProcess(bot);
@@ -94,28 +84,58 @@ function createBot() {
                 } else {
                     clearInterval(clickLoop);
                 }
-            }, 2500); 
+            }, 3000); 
         }
 
-        // 2. NHẬN DIỆN ĐÃ VÀO GAME BỎ QUA BƯỚC LA BÀN
+        // 2. SERVER BẢO TRÌ NÉM VỀ HUB -> NẰM CHỜ KÉO
+        if (lowerMsg.includes('kicked from') || lowerMsg.includes('bảo trì') || lowerMsg.includes('đã đóng')) {
+            if (botState === 'FARMING' || botState === 'HUB') {
+                console.log('[Hệ thống] Server bảo trì ném ra Sảnh! CHUYỂN SANG CHẾ ĐỘ NẰM CHỜ SERVER TỰ KÉO LẠI VÀO...');
+                botState = 'WAIT_AUTO'; 
+                isComboRunning = false;
+                if (clickLoop) clearInterval(clickLoop);
+                if (farmTimeout) clearTimeout(farmTimeout);
+                if (antiAfkLoop) clearInterval(antiAfkLoop);
+            }
+        }
+
+        // 3. NHẬN DIỆN ĐÃ VÀO GAME -> BỎ QUA BƯỚC LA BÀN
+        if (botState !== 'FARMING' && lowerMsg.includes('vừa tham gia máy chủ') && message.includes(bot.username)) {
+            console.log(`[Mắt Thần] Đã thấy báo: ">>> ${bot.username} vừa tham gia máy chủ"! Bắt đầu chạy kịch bản múa...`);
+            botState = 'FARMING'; 
+            
+            if (clickLoop) clearInterval(clickLoop);
+            if (farmTimeout) clearTimeout(farmTimeout);
+            
+            farmTimeout = setTimeout(() => startFarmingProcess(bot), 3000);
+        }
+
+        // DỰ PHÒNG: NẾU THẤY CHAT CỦA GAME (TRƯỜNG HỢP KHÔNG CÓ DÒNG JOIN)
         if (botState === 'HUB' && (lowerMsg.includes('boss') || lowerMsg.includes('tài xỉu') || lowerMsg.includes('nô lệ') || lowerMsg.includes('thế giới') || lowerMsg.includes('thủ lĩnh'))) {
             console.log('[Mắt Thần] Nhận diện tin nhắn Game Farm! Bỏ qua La Bàn, tiến hành chạy bãi...');
             botState = 'FARMING';
             if (clickLoop) clearInterval(clickLoop);
-            setTimeout(() => startFarmingProcess(bot), 3000);
+            if (farmTimeout) clearTimeout(farmTimeout);
+            farmTimeout = setTimeout(() => startFarmingProcess(bot), 3000);
         }
 
-        // ==========================================
-        // CẢM BIẾN CHỐNG KẸT HUB (TỰ RESET TRẠNG THÁI)
-        // ==========================================
-        if (lowerMsg.includes('kicked from') || lowerMsg.includes('bảo trì') || lowerMsg.includes('đã đóng')) {
-            if (botState === 'FARMING') {
-                console.log('[Hệ thống] Bị ném về Sảnh! Reset trạng thái để tự động đục lỗ vào lại...');
-                botState = 'HUB';
-                isLoggingIn = false; 
+        // 4. LỖI KẾT NỐI (UNABLE TO CONNECT) -> CLICK LA BÀN LẠI TỪ ĐẦU
+        if (lowerMsg.includes('unable to connect') || lowerMsg.includes('không thể kết nối')) {
+            if (botState !== 'WAIT_AUTO') { 
+                console.log('[Lỗi Server] Bị từ chối vô cụm Farm! Lôi la bàn ra spam tiếp...');
+                botState = 'HUB'; 
                 isComboRunning = false;
-                if (antiAfkLoop) clearInterval(antiAfkLoop);
+                if (farmTimeout) clearTimeout(farmTimeout);
+                
+                bot.setQuickBarSlot(4); 
                 if (clickLoop) clearInterval(clickLoop);
+                clickLoop = setInterval(() => {
+                    if (botState === 'HUB') {
+                        bot.activateItem(); 
+                    } else {
+                        clearInterval(clickLoop);
+                    }
+                }, 3000); 
             }
         }
 
@@ -143,7 +163,6 @@ function createBot() {
 
     bot.on('windowOpen', async (window) => {
         if (botState !== 'HUB') return; 
-        botState = 'CLICKING_MENU'; 
         if (clickLoop) clearInterval(clickLoop);
 
         try {
@@ -155,9 +174,7 @@ function createBot() {
             console.log(`[Menu 2] Nhấp slot 14...`);
             await bot.clickWindow(14, 0, 0); 
             
-            botState = 'FARMING'; 
-            console.log('[Menu] Thành công! Đợi 15s load map...');
-            setTimeout(() => startFarmingProcess(bot), 15000); 
+            console.log('[Menu] Thành công! Đợi load map xác nhận...');
         } catch (err) {
             console.log('Lỗi click GUI:', err.message);
             botState = 'HUB'; 
@@ -172,8 +189,9 @@ function createBot() {
         bot.clearControlStates(); 
         if (antiAfkLoop) clearInterval(antiAfkLoop);
         if (clickLoop) clearInterval(clickLoop);
+        if (farmTimeout) clearTimeout(farmTimeout);
 
-        if (botState === 'HUB') {
+        if (botState === 'HUB' || botState === 'WAIT_AUTO') {
             console.log('[CẢNH BÁO] Bot chết ở Sảnh (Hub)! Đang tự động ấn Hồi Sinh (Respawn)...');
             setTimeout(() => { bot.respawn(); }, 2000); 
         } else {
@@ -194,6 +212,7 @@ function createBot() {
         isComboRunning = false;
         if (antiAfkLoop) clearInterval(antiAfkLoop); 
         if (clickLoop) clearInterval(clickLoop);
+        if (farmTimeout) clearTimeout(farmTimeout);
 
         failCount++; 
         
@@ -221,7 +240,7 @@ async function startFarmingProcess(bot) {
 
     try {
         bot.setQuickBarSlot(0); 
-        await randomSleep(20000, 22000);
+        await randomSleep(7000, 9000);
 
         // BAY ĐẾN BÃI TRƯỚC RỒI MỚI MÚA TAY
         bot.chat('/spawn');
@@ -264,7 +283,7 @@ async function startFarmingProcess(bot) {
         // Phanh gấp bằng phanh ABS
         bot.clearControlStates(); 
         console.log('[Farm] Tiếp đất an toàn, đứng yên lấy hơi chuẩn bị múa...');
-        
+
         await randomSleep(1500, 2000);
 
         // BẮT ĐẦU ĐÈ SHIFT VÀ MÚA TAY
@@ -283,7 +302,7 @@ async function startFarmingProcess(bot) {
         // NHẢ SHIFT NGAY TẠI ĐÂY
         bot.setControlState('sneak', false); 
         bot.clearControlStates(); 
-        await randomSleep(2000, 3000);
+        await randomSleep(2000, 3000); 
 
         bot.setControlState('forward', true);
         await sleep(500); 
