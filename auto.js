@@ -240,7 +240,7 @@ async function startFarmingProcess(bot) {
 
     try {
         bot.setQuickBarSlot(0); 
-        await randomSleep(7000, 9000);
+        await sleep(2000);
 
         // BAY ĐẾN BÃI TRƯỚC RỒI MỚI MÚA TAY
         bot.chat('/spawn');
