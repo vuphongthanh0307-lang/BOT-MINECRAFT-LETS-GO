@@ -57,7 +57,7 @@ function createBot() {
             isLoggingIn = true;
             console.log('[Hub] Đã vào server, chuẩn bị đăng nhập...');
             await sleep(2000);
-            bot.chat('/l Windvu2193'); 
+            bot.chat('/dn Windvu@2@1@9@30849009630'); 
             console.log('[Hub] Đã gửi lệnh login! Đang dỏng tai nghe ngóng Server phản hồi...');
         }
     });
@@ -240,11 +240,11 @@ async function startFarmingProcess(bot) {
 
     try {
         bot.setQuickBarSlot(0); 
-        await sleep(2000);
+        await sleep(25000);
 
         // BAY ĐẾN BÃI TRƯỚC RỒI MỚI MÚA TAY
         bot.chat('/spawn');
-        await randomSleep(5000, 7000); 
+        await sleep(5000); 
 
         // ==========================================
         // BƯỚC MỚI: LIA CHUỘT TRÁI 72 ĐỘ & PHI THÂN 2 PHÁT
