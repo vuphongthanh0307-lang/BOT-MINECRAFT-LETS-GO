@@ -32,7 +32,7 @@ function createBot() {
     const bot = mineflayer.createBot({
         host: 'aemine.vn',
         port: 25565,
-        username: 'winlxag5553', 
+        username: 'winlxag5554', 
         version: '1.12.2',
         viewDistance: 'tiny', 
         checkTimeoutInterval: 120000,
@@ -240,52 +240,7 @@ async function startFarmingProcess(bot) {
 
     try {
         bot.setQuickBarSlot(0); 
-        await sleep(25000);
-
-        // BAY ĐẾN BÃI TRƯỚC RỒI MỚI MÚA TAY
-        bot.chat('/spawn');
-        await sleep(5000); 
-
-        // ==========================================
-        // BƯỚC MỚI: LIA CHUỘT TRÁI 72 ĐỘ & PHI THÂN 2 PHÁT
-        // ==========================================
-        console.log('[Farm] Tới Spawn rồi, lia chuột 72 độ sang trái...');
-        
-        const currentYaw = bot.entity.yaw;
-        const targetYaw = currentYaw + (72 * Math.PI / 180); 
-        const currentPitch = bot.entity.pitch; 
-        
-        await bot.look(targetYaw, currentPitch, true); 
-        await randomSleep(300, 500); 
-
-        console.log('[Farm] Vận nội công W + Sprint + Space nhảy liên tiếp 2 phát...');
-        
-        // Bắt đầu đè ga chạy nhanh
-        bot.setControlState('forward', true);
-        bot.setControlState('sprint', true);
-        
-        // --- NHẢY PHÁT 1 ---
-        bot.setControlState('jump', true); 
-        await sleep(500); // Bay trên không 0.5s
-        bot.setControlState('jump', false); // Nhả Space để tiếp đất
-        
-        // Khựng lại xíu cho nó chạm đất lấy đà (vẫn đang đè W chạy nhanh)
-        await randomSleep(300, 400); 
-
-        // --- NHẢY PHÁT 2 ---
-        bot.setControlState('jump', true); // Đạp đất nảy lên phát 2
-        await sleep(500); // Bay tiếp 0.5s
-        bot.setControlState('jump', false); // Nhả Space ra
-        
-        // Giữ W + Sprint thêm 1 xíu để nó bay hết đà phát thứ 2 rơi xuống
-        await randomSleep(600, 800); 
-        
-        // Phanh gấp bằng phanh ABS
-        bot.clearControlStates(); 
-        console.log('[Farm] Tiếp đất an toàn, đứng yên lấy hơi chuẩn bị múa...');
-
-        await randomSleep(1500, 2000);
-
+        await sleep(1000);
         // BẮT ĐẦU ĐÈ SHIFT VÀ MÚA TAY
         bot.setControlState('sneak', true); 
         await randomSleep(100, 200); 
@@ -301,17 +256,21 @@ async function startFarmingProcess(bot) {
 
         // NHẢ SHIFT NGAY TẠI ĐÂY
         bot.setControlState('sneak', false); 
-        bot.clearControlStates(); 
-        await randomSleep(2000, 3000); 
+        bot.clearControlStates();
+        await sleep(1000); 
+        bot.chat('/home');
 
+         await sleep(5000); 
+        bot.setControlState('forward', true);  
+        bot.setControlState('right', true); 
+        await sleep(500); 
+        bot.clearControlStates();
         bot.setControlState('forward', true);
         await sleep(500); 
         bot.clearControlStates(); 
-        await randomSleep(3000, 5000);
         
-        bot.chat('/home'); // Xong combo thì bay về bãi Farm
-        await randomSleep(7000, 9000); 
-        
+        await sleep(4000);
+               
         // BƯỚC CUỐI CÙNG: NGỒI XUỐNG NHẬP ĐỊNH
         bot.chat('/sit');
         console.log('[Farm] Đã đến bãi, ngồi xuống nhập định (Tắt Auto Kit)!');
