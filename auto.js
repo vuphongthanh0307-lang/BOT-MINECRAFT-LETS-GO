@@ -172,7 +172,7 @@ function createBot() {
         if (failCount >= 5) {
             console.log(`[BÁO ĐỘNG] Rớt mạng ${failCount} lần! Ngủ đông 1 tiếng tránh bị Ban...`);
             failCount = 0; 
-            setTimeout(createBot, 3600000); 
+            setTimeout(createBot, 40000); 
             return;
         }
         console.log(`[Mất mạng] Lần rớt thứ ${failCount}. Đợi ${RECONNECT_DELAY/1000} giây để vào lại...`);
