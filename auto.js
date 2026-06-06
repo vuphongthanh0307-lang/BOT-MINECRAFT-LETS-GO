@@ -71,12 +71,13 @@ function createBot() {
         }
 
         // ==========================================
-        // KHÚC NÀY XỬ LÝ LÚC ĐANG BỊ SONAR SOI
+        // CÁCH TRỊ SONAR THEO Ý PHÁP SƯ: THẤY LÀ GÁN BIẾN LUÔN
         // ==========================================
         if (lowerMsg.includes('sonar') && lowerMsg.includes('xác minh')) {
-            console.log('[Anti-Bot] Bị Sonar soi! Tắt máy đứng im chờ nó kick để qua ải...');
+            console.log('[Anti-Bot] Bị Sonar soi! Ghi nhận cờ Sonar, chờ nó đá văng là phi vào lại liền...');
             bot.clearControlStates();
             botState = 'WAIT_AUTO';
+            isSonarKick = true; // GÁN NGAY LÚC NÀY LUÔN
         }
 
         // --- BỘ LỌC TỰ ĐỘNG JOIN PARTY ---
@@ -161,19 +162,6 @@ function createBot() {
         }
     });
 
-    // ==========================================
-    // NHẬN DIỆN LÝ DO KICK TỪ SERVER (ĐỂ BẮT SONAR)
-    // ==========================================
-    bot.on('kicked', (reason) => {
-        const reasonStr = reason.toString().toLowerCase();
-        console.log(`[SERVER KICK] Lý do: ${reason.toString()}`);
-        
-        if (reasonStr.includes('sonar') || reasonStr.includes('xác minh thành công')) {
-            console.log('>>> [Hệ Thống] Vượt ải Sonar thành công! Chuẩn bị quay lại ngay lập tức...');
-            isSonarKick = true;
-        }
-    });
-
     bot.on('death', () => {
         bot.clearControlStates();
         isComboRunning = false;
@@ -191,13 +179,15 @@ function createBot() {
         isLoggingIn = false;
         botState = 'DISCONNECTED'; 
 
-        // KHÚC NÀY NÉ CÁI DELAY CỦA RỚT MẠNG NẾU LÀ DO SONAR
+        // ==========================================
+        // VƯỢT ẢI SONAR KHÔNG CẦN CHỜ DELAY
+        // ==========================================
         if (isSonarKick) {
-            isSonarKick = false;
+            isSonarKick = false; // Trả lại cờ
             failCount = 0; // Tẩy trắng lỗi rớt mạng
-            console.log(`[Anti-Bot] Đang kết nối lại ngay lập tức (chờ 3 giây)...`);
+            console.log(`[Anti-Bot] Đã bị Sonar sút ra! Kết nối lại ngay lập tức (chờ 3 giây)...`);
             setTimeout(createBot, 3000);
-            return; 
+            return; // Thoát ra luôn, bỏ qua cái đoạn tính rớt mạng 300s bên dưới
         }
 
         failCount++;
@@ -296,4 +286,5 @@ rl.on('line', (input) => {
 });
 
 createBot();
+
 
