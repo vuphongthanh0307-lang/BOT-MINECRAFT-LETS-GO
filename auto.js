@@ -22,6 +22,7 @@ let isLoggingIn = false;
 let isComboRunning = false; 
 let isGUIOpen = false; 
 let failCount = 0;
+let isSonarKick = false; // BẢO BỐI VƯỢT ẢI SONAR
 
 function createBot() {
     const bot = mineflayer.createBot({
@@ -67,6 +68,15 @@ function createBot() {
         // 1.5. LÌ LỢM ĐĂNG NHẬP
         if (lowerMsg.includes('đăng nhập bằng lệnh: /dn') || lowerMsg.includes('vui lòng đăng nhập')) {
             setTimeout(() => bot.chat('/dn Windvu@2#1#9#30849009630'), 1500); 
+        }
+
+        // ==========================================
+        // KHÚC NÀY XỬ LÝ LÚC ĐANG BỊ SONAR SOI
+        // ==========================================
+        if (lowerMsg.includes('sonar') && lowerMsg.includes('xác minh')) {
+            console.log('[Anti-Bot] Bị Sonar soi! Tắt máy đứng im chờ nó kick để qua ải...');
+            bot.clearControlStates();
+            botState = 'WAIT_AUTO';
         }
 
         // --- BỘ LỌC TỰ ĐỘNG JOIN PARTY ---
@@ -151,6 +161,19 @@ function createBot() {
         }
     });
 
+    // ==========================================
+    // NHẬN DIỆN LÝ DO KICK TỪ SERVER (ĐỂ BẮT SONAR)
+    // ==========================================
+    bot.on('kicked', (reason) => {
+        const reasonStr = reason.toString().toLowerCase();
+        console.log(`[SERVER KICK] Lý do: ${reason.toString()}`);
+        
+        if (reasonStr.includes('sonar') || reasonStr.includes('xác minh thành công')) {
+            console.log('>>> [Hệ Thống] Vượt ải Sonar thành công! Chuẩn bị quay lại ngay lập tức...');
+            isSonarKick = true;
+        }
+    });
+
     bot.on('death', () => {
         bot.clearControlStates();
         isComboRunning = false;
@@ -167,6 +190,15 @@ function createBot() {
         console.log('[SERVER] Đã bị văng hẳn khỏi cụm máy chủ!');
         isLoggingIn = false;
         botState = 'DISCONNECTED'; 
+
+        // KHÚC NÀY NÉ CÁI DELAY CỦA RỚT MẠNG NẾU LÀ DO SONAR
+        if (isSonarKick) {
+            isSonarKick = false;
+            failCount = 0; // Tẩy trắng lỗi rớt mạng
+            console.log(`[Anti-Bot] Đang kết nối lại ngay lập tức (chờ 3 giây)...`);
+            setTimeout(createBot, 3000);
+            return; 
+        }
 
         failCount++;
         if (failCount >= 5) {
@@ -264,3 +296,4 @@ rl.on('line', (input) => {
 });
 
 createBot();
+
