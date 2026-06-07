@@ -71,13 +71,13 @@ function createBot() {
         }
 
         // ==========================================
-        // CÁCH TRỊ SONAR THEO Ý PHÁP SƯ: THẤY LÀ GÁN BIẾN LUÔN
+        // THẤY CHAT SONAR -> ĐỨNG IM NHƯ TƯỢNG
         // ==========================================
         if (lowerMsg.includes('sonar') && lowerMsg.includes('xác minh')) {
-            console.log('[Anti-Bot] Bị Sonar soi! Ghi nhận cờ Sonar, chờ nó đá văng là phi vào lại liền...');
+            console.log('[Anti-Bot] Bị Sonar soi! Đứng im thả tay khỏi phím chờ nó quét...');
             bot.clearControlStates();
             botState = 'WAIT_AUTO';
-            isSonarKick = true; // GÁN NGAY LÚC NÀY LUÔN
+            // Khúc này không gán isSonarKick vội, chờ nó hiện đúng bảng Kick thành công mới gán
         }
 
         // --- BỘ LỌC TỰ ĐỘNG JOIN PARTY ---
@@ -121,12 +121,11 @@ function createBot() {
     });
 
     // ==========================================
-    // MẮT THẦN ĐỌC TÚI ĐỒ (ĐÃ KHÓA CỨNG KHI FARM)
+    // MẮT THẦN ĐỌC TÚI ĐỒ
     // ==========================================
     setInterval(() => {
         if (!currentBot || !currentBot.inventory) return;
         
-        // CHỐT CHẶN BẤT TỬ
         if (botState === 'FARMING') return; 
 
         const items = currentBot.inventory.items();
@@ -162,6 +161,21 @@ function createBot() {
         }
     });
 
+    // ==========================================
+    // NHẬN DIỆN LÝ DO KICK CHÍNH XÁC TỪ BẢNG THÔNG BÁO
+    // ==========================================
+    bot.on('kicked', (reason) => {
+        // Chuyển toàn bộ nội dung bảng Kick sang chữ thường để dễ bắt mạch
+        const reasonStr = reason.toString().toLowerCase() + JSON.stringify(reason).toLowerCase();
+        console.log(`[SERVER KICK] Lý do: ${reason.toString()}`);
+        
+        // Bắt đúng câu chữ trong hình ông gửi: "xác minh thành công" hoặc "vượt qua quá trình"
+        if (reasonStr.includes('xác minh thành công') || reasonStr.includes('vượt qua')) {
+            console.log('>>> [Hệ Thống] Đã thấy bảng Sonar báo xác minh thành công! Chuẩn bị bơi vào lại...');
+            isSonarKick = true;
+        }
+    });
+
     bot.on('death', () => {
         bot.clearControlStates();
         isComboRunning = false;
@@ -180,14 +194,14 @@ function createBot() {
         botState = 'DISCONNECTED'; 
 
         // ==========================================
-        // VƯỢT ẢI SONAR KHÔNG CẦN CHỜ DELAY
+        // VƯỢT ẢI SONAR: TỪ TỪ TÀ TÀ MÀ VÀO
         // ==========================================
         if (isSonarKick) {
             isSonarKick = false; // Trả lại cờ
             failCount = 0; // Tẩy trắng lỗi rớt mạng
-            console.log(`[Anti-Bot] Đã bị Sonar sút ra! Kết nối lại ngay lập tức (chờ 3 giây)...`);
-            setTimeout(createBot, 3000);
-            return; // Thoát ra luôn, bỏ qua cái đoạn tính rớt mạng 300s bên dưới
+            console.log(`[Anti-Bot] Đã qua ải Sonar! Từ từ đợi 15 giây uống ngụm nước rồi mới vào lại...`);
+            setTimeout(createBot, 15000); // CHỜ 15 GIÂY (15000ms) ĐỂ GIẢ LÀM NGƯỜI THẬT
+            return; 
         }
 
         failCount++;
@@ -286,5 +300,3 @@ rl.on('line', (input) => {
 });
 
 createBot();
-
-
