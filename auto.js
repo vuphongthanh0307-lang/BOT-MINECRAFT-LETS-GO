@@ -2,6 +2,17 @@ const express = require('express');
 const mineflayer = require('mineflayer');
 const readline = require('readline');
 
+// ==========================================
+// BĂNG DÍNH DÁN MỒM CÁI THÔNG BÁO "IGNORE" NGỨA MẮT
+// ==========================================
+const originalConsoleError = console.error;
+console.error = function() {
+    if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].includes('Ignoring block entities')) {
+        return; // Thấy chữ này là câm nín luôn, không in ra màn hình
+    }
+    originalConsoleError.apply(console, arguments);
+};
+
 const RECONNECT_DELAY = 300000; 
 
 const app = express();
@@ -179,13 +190,13 @@ function createBot() {
         botState = 'DISCONNECTED'; 
 
         // ==========================================
-        // TỪ TỪ TÀ TÀ VÀO LẠI SAU KHI VƯỢT ẢI
+        // VƯỢT ẢI SONAR: VÀO LẠI TRONG 4 GIÂY ĐỂ SERVER KHÔNG QUÊN MẶT
         // ==========================================
         if (isSonarKick) {
             isSonarKick = false; 
-            failCount = 0; // Không tính là rớt mạng
-            console.log(`[Anti-Bot] Vừa thấy bảng Sonar xác minh thành công! Ngồi rung đùi 15 giây cho giống người thật rồi mới vô lại...`);
-            setTimeout(createBot, 15000); // 15 GIÂY CHO ADMIN KHỎI NGHI NGỜ
+            failCount = 0; // Tẩy trắng rớt mạng
+            console.log(`[Anti-Bot] Vừa thấy bảng Sonar xác minh thành công! Đợi 4 giây phi vào lại chớp nhoáng...`);
+            setTimeout(createBot, 4000); 
             return; 
         }
 
@@ -202,7 +213,7 @@ function createBot() {
 }
 
 // ==================================================
-// KỊCH BẢN MÚA CỦA WINLXAG5555 (GIỮ NGUYÊN 100%)
+// KỊCH BẢN MÚA CỦA WINLXAG5555
 // ==================================================
 async function startFarmingProcess(bot) {
     if (isComboRunning) return; 
