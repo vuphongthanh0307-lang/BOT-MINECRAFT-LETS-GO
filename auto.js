@@ -3,14 +3,22 @@ const mineflayer = require('mineflayer');
 const readline = require('readline');
 
 // ==========================================
-// BĂNG DÍNH DÁN MỒM CÁI THÔNG BÁO "IGNORE" NGỨA MẮT
+// BĂNG DÍNH 3 LỚP: DÁN MỒM LỖI CHUNK NGỨA MẮT
 // ==========================================
-const originalConsoleError = console.error;
-console.error = function() {
-    if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].includes('Ignoring block entities')) {
-        return; // Thấy chữ này là câm nín luôn, không in ra màn hình
-    }
-    originalConsoleError.apply(console, arguments);
+const originalLog = console.log;
+console.log = function(...args) {
+    if (typeof args[0] === 'string' && args[0].includes('Ignoring block entities')) return;
+    originalLog.apply(console, args);
+};
+const originalWarn = console.warn;
+console.warn = function(...args) {
+    if (typeof args[0] === 'string' && args[0].includes('Ignoring block entities')) return;
+    originalWarn.apply(console, args);
+};
+const originalError = console.error;
+console.error = function(...args) {
+    if (typeof args[0] === 'string' && args[0].includes('Ignoring block entities')) return;
+    originalError.apply(console, args);
 };
 
 const RECONNECT_DELAY = 300000; 
@@ -49,8 +57,8 @@ function createBot() {
     currentBot = bot; 
 
     bot.on('message', (jsonMsg) => {
-        if (jsonMsg.toAnsi) console.log(jsonMsg.toAnsi());
-        else console.log(jsonMsg.toString());
+        if (jsonMsg.toAnsi) originalLog('[Chat] ' + jsonMsg.toAnsi());
+        else originalLog('[Chat] ' + jsonMsg.toString());
     });
 
     bot.on('spawn', async () => {
@@ -82,13 +90,13 @@ function createBot() {
         }
 
         // ==========================================
-        // SONAR: BẬT CỜ VÀ ĐỨNG IM CHỜ SÚT
+        // BƯỚC 1: NHẬN DIỆN SONAR ĐANG QUÉT
         // ==========================================
         if (lowerMsg.includes('sonar') && lowerMsg.includes('xác minh')) {
-            console.log('[Anti-Bot] Bị Sonar soi! Bật cờ, buông tay khỏi bàn phím chờ nó sút ra...');
+            console.log('>>> [Anti-Bot] Bị Sonar soi! Đứng im như tượng chờ nó cấp giấy chứng nhận...');
             bot.clearControlStates();
             botState = 'WAIT_AUTO';
-            isSonarKick = true; // Gán cờ ngay từ lúc nó báo
+            isSonarKick = true; // Bật cờ dự phòng
         }
 
         // --- BỘ LỌC TỰ ĐỘNG JOIN PARTY ---
@@ -172,6 +180,23 @@ function createBot() {
         }
     });
 
+    // ==========================================
+    // BƯỚC 2: ĐỌC BẢNG KICK XÁC MINH THÀNH CÔNG
+    // ==========================================
+    bot.on('kicked', (reason) => {
+        let reasonStr = '';
+        try { reasonStr = JSON.stringify(reason); } 
+        catch (e) { reasonStr = reason.toString(); }
+        
+        // Nếu cái bảng kick có chứa những từ khóa này
+        if (reasonStr.toLowerCase().includes('xác minh') || reasonStr.toLowerCase().includes('thành công') || reasonStr.toLowerCase().includes('vượt qua')) {
+            console.log('>>> [Anti-Bot] Đã đọc được bảng "XÁC MINH THÀNH CÔNG" từ server!');
+            isSonarKick = true; // Khóa cờ xác nhận 100%
+        } else {
+            console.log(`[BỊ KICK] Lý do khác: ${reasonStr}`);
+        }
+    });
+
     bot.on('death', () => {
         bot.clearControlStates();
         isComboRunning = false;
@@ -190,13 +215,24 @@ function createBot() {
         botState = 'DISCONNECTED'; 
 
         // ==========================================
-        // VƯỢT ẢI SONAR: VÀO LẠI TRONG 4 GIÂY ĐỂ SERVER KHÔNG QUÊN MẶT
+        // BƯỚC 3: ĐẾM NGƯỢC 12 GIÂY CHO RENDER KHỎI NGỦ + SERVER KỊP LƯU IP
         // ==========================================
         if (isSonarKick) {
-            isSonarKick = false; 
+            isSonarKick = false; // Trả lại cờ
             failCount = 0; // Tẩy trắng rớt mạng
-            console.log(`[Anti-Bot] Vừa thấy bảng Sonar xác minh thành công! Đợi 4 giây phi vào lại chớp nhoáng...`);
-            setTimeout(createBot, 4000); 
+            console.log(`[Anti-Bot] Đang chờ 12 giây để server cập nhật danh sách...`);
+            
+            let waitTime = 12;
+            const countdownInterval = setInterval(() => {
+                console.log(`... Đang đếm ngược: ${waitTime} giây nữa sẽ vô lại ...`);
+                waitTime--;
+                
+                if (waitTime <= 0) {
+                    clearInterval(countdownInterval);
+                    console.log(`[Anti-Bot] Hết giờ! Phi thẳng vô cụm lượm lúa!!!`);
+                    createBot();
+                }
+            }, 1000); // Lặp lại mỗi 1 giây
             return; 
         }
 
