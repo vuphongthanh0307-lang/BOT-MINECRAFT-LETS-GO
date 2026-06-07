@@ -257,9 +257,6 @@ async function startFarmingProcess(bot) {
 
     try {
         bot.setQuickBarSlot(0); 
-        await sleep(1000);
-        
-        console.log('[Farm] Đang nghe ngóng chờ lời mời Party (3 giây)...');
         await sleep(3000);
         
         bot.setControlState('sneak', true); 
