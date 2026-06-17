@@ -249,55 +249,58 @@ function createBot() {
 }
 
 // ==================================================
-// KỊCH BẢN MÚA CỦA WINLXAG5555
+// KỊCH BẢN CẦN THỦ (KHÔNG BẺ CỔ, GIỮ NGUYÊN GÓC /HOME)
 // ==================================================
-async function startFarmingProcess(bot) {
+async function startFishingProcess(bot) {
     if (isComboRunning) return; 
     isComboRunning = true;
 
     try {
         bot.setQuickBarSlot(0); 
-        await sleep(5000);
+        await sleep(2000);
         
-        bot.setControlState('sneak', true); 
-        await sleep(200); 
-        
-        bot.swingArm('right'); 
-        await sleep(200);
-        bot.activateItem(); 
-        await sleep(200);
-        bot.activateItem(); 
-        await sleep(200);
-        bot.activateItem(); 
-        await sleep(200);
-
-        bot.setControlState('sneak', false); 
-        bot.clearControlStates(); 
-        await sleep(1000); 
-
+        console.log('[Câu Cá] Đang phi về bãi (/home)...');
         bot.chat('/home'); 
-        await randomSleep(6000, 7000); 
-         
-        console.log('[Farm] Đang lùi xéo bằng phím D + S trong 0.5 giây...');
-        bot.setControlState('forward', true);  
-        bot.setControlState('right', true); 
-        
-        await sleep(500); 
-        bot.clearControlStates();
-        await sleep(8000);
-        bot.chat('/sit');
+        await sleep(6000); // Đợi load map bãi câu
 
-        const finalYaw = bot.entity.yaw;
-        const finalPitch = bot.entity.pitch - (20 * Math.PI / 180); 
-        
-        await bot.look(finalYaw, finalPitch, true); 
-        await sleep(300);
-        
-        console.log('[Farm] Đã nhích đúng vị trí, ngồi xuống nhập định!');
-        failCount = 0; 
+        console.log('[Câu Cá] Tới hồ rồi! Đợi tí lấy hơi rồi móc giun...');
+        await sleep(2000); // Đợi tí theo ý pháp sư
+
+        // VÒNG LẶP CÂU CÁ
+        while (botState === 'FARMING') {
+            const fishingRod = bot.inventory.items().find(item => item.name === 'fishing_rod');
+            if (!fishingRod) {
+                console.log('>>> [Hết Cần] Không thấy cần câu! Đứng ngáp chờ... (Kiểm tra rương/túi đồ)');
+                await sleep(10000);
+                continue; 
+            }
+
+            // Cầm cần lên
+            await bot.equip(fishingRod, 'hand');
+
+            try {
+                // Nghỉ tay ngẫu nhiên 0.3s -> 0.8s (Chống Anti-Cheat thời gian)
+                await randomSleep(300, 800); 
+
+                console.log('[Câu Cá] 🎣 Đang quăng mồi... Chờ cá cắn!');
+                
+                // bot.fish() sẽ lo việc chờ phao chìm và giật
+                await bot.fish(); 
+                
+                console.log('[Câu Cá] 🐟 LỤM CÁ! Dính rồi! Đang gỡ cá...');
+                failCount = 0; 
+                
+                // Nghỉ xả hơi ngẫu nhiên từ 0.8s -> 1.8s rồi mới ném tiếp
+                await randomSleep(800, 1800); 
+
+            } catch (err) {
+                console.log('[Câu Cá] Rớt mồi hoặc đứt dây. Nghỉ ngơi tí rồi quăng lại...', err.message);
+                await randomSleep(1500, 2500);
+            }
+        }
 
     } catch (err) {
-        console.log('[Farm] Lỗi:', err.message);
+        console.log('[Câu Cá] Lỗi Kịch Bản:', err.message);
     } finally {
         isComboRunning = false; 
     }
