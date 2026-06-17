@@ -188,10 +188,9 @@ function createBot() {
         try { reasonStr = JSON.stringify(reason); } 
         catch (e) { reasonStr = reason.toString(); }
         
-        // Nếu cái bảng kick có chứa những từ khóa này
         if (reasonStr.toLowerCase().includes('xác minh') || reasonStr.toLowerCase().includes('thành công') || reasonStr.toLowerCase().includes('vượt qua')) {
             console.log('>>> [Anti-Bot] Đã đọc được bảng "XÁC MINH THÀNH CÔNG" từ server!');
-            isSonarKick = true; // Khóa cờ xác nhận 100%
+            isSonarKick = true; 
         } else {
             console.log(`[BỊ KICK] Lý do khác: ${reasonStr}`);
         }
@@ -248,7 +247,7 @@ function createBot() {
     });
 }
 
-==================================================
+// ==================================================
 // KỊCH BẢN MÚA CỦA WINLXAG5555
 // ==================================================
 async function startFarmingProcess(bot) {
@@ -304,7 +303,7 @@ async function startFarmingProcess(bot) {
 }
 
 // ==========================================
-// TÍNH NĂNG CHAT TỪ REPLIT VÀO GAME
+// TÍNH NĂNG CHAT VÀ ĐIỀU KHIỂN BẰNG BÀN PHÍM TỪ REPLIT
 // ==========================================
 let lastChatTime = 0;
 const rl = readline.createInterface({
@@ -312,18 +311,110 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
-rl.on('line', (input) => {
-    if (currentBot) {
+rl.on('line', async (input) => {
+    if (!currentBot) {
+        console.log('[Lỗi] Bot chưa vào game, không nhận lệnh được!');
+        return;
+    }
+
+    const rawInput = input.trim();
+    const cmdParts = rawInput.toLowerCase().split(/\s+/); 
+    const cmd = cmdParts[0]; // Cái chữ đầu tiên có dấu / (VD: /wdj)
+    const val = cmdParts[1] ? parseFloat(cmdParts[1]) : null; // Cái số thời gian/góc độ phía sau
+
+    try {
+        // --- 1. LỆNH DỪNG LẠI HOẶC ĐỨNG DẬY ---
+        if (cmd === '/stop') { 
+            currentBot.clearControlStates(); 
+            console.log('>> [WASD] PHANH GẤP! Đã dừng mọi di chuyển.'); 
+            return; 
+        }
+        if (cmd === '/stand') { 
+            currentBot.setControlState('sneak', true); 
+            setTimeout(() => currentBot.setControlState('sneak', false), 300); 
+            console.log('>> [HÀNH ĐỘNG] Nhấn Shift để ĐỨNG DẬY (Thoát khỏi ghế)!'); 
+            return; 
+        }
+
+        // --- 2. LỆNH QUAY CAMERA THEO ĐỘ (ĐÃ XÓA VUNG TAY) ---
+        if (cmd === '/trai' || cmd === '/trái') { 
+            const angle = val !== null ? val : 90;
+            await currentBot.look(currentBot.entity.yaw + (angle * Math.PI / 180), currentBot.entity.pitch, false); 
+            console.log(`>> [CAMERA] Quay sang TRÁI ${angle} độ`); return; 
+        }
+        if (cmd === '/phai' || cmd === '/phải') { 
+            const angle = val !== null ? val : 90;
+            await currentBot.look(currentBot.entity.yaw - (angle * Math.PI / 180), currentBot.entity.pitch, false); 
+            console.log(`>> [CAMERA] Quay sang PHẢI ${angle} độ`); return; 
+        }
+        if (cmd === '/sau') { 
+            await currentBot.look(currentBot.entity.yaw + Math.PI, currentBot.entity.pitch, false); 
+            console.log('>> [CAMERA] Quay mặt 180 độ về PHÍA SAU'); return; 
+        }
+        if (cmd === '/len' || cmd === '/lên') { 
+            const angle = val !== null ? val : 45;
+            const newPitch = Math.max(-Math.PI/2, currentBot.entity.pitch - (angle * Math.PI / 180));
+            await currentBot.look(currentBot.entity.yaw, newPitch, false); 
+            console.log(`>> [CAMERA] Ngước nhìn LÊN ${angle} độ`); return; 
+        }
+        if (cmd === '/xuong' || cmd === '/xuống') { 
+            const angle = val !== null ? val : 45;
+            const newPitch = Math.min(Math.PI/2, currentBot.entity.pitch + (angle * Math.PI / 180));
+            await currentBot.look(currentBot.entity.yaw, newPitch, false); 
+            console.log(`>> [CAMERA] Cúi nhìn XUỐNG ${angle} độ`); return; 
+        }
+
+        // --- 3. LỆNH DI CHUYỂN KẾT HỢP (COMBO WASD + JUMP + SHIFT) ---
+        // Xóa dấu / ở đầu để kiểm tra các phím bên trong
+        const moveKeys = cmd.replace('/', '');
+        
+        // Chỉ chạy khối này nếu chuỗi lệnh CHỈ CHỨA các chữ w, a, s, d, j, sh
+        if (/^(w|a|s|d|j|sh)+$/.test(moveKeys)) {
+            
+            // Xóa sạch trạng thái cũ trước khi gán combo mới
+            currentBot.clearControlStates();
+
+            let logMsg = ">> [WASD] Thi triển Combo:";
+
+            if (moveKeys.includes('w')) { currentBot.setControlState('forward', true); logMsg += ' Tiến'; }
+            if (moveKeys.includes('s')) { currentBot.setControlState('back', true); logMsg += ' Lùi'; }
+            if (moveKeys.includes('a')) { currentBot.setControlState('left', true); logMsg += ' Sang Trái'; }
+            if (moveKeys.includes('d')) { currentBot.setControlState('right', true); logMsg += ' Sang Phải'; }
+            if (moveKeys.includes('sh')) { currentBot.setControlState('sneak', true); logMsg += ' (Đè Shift)'; }
+            if (moveKeys.includes('j')) { currentBot.setControlState('jump', true); logMsg += ' + Nhảy'; }
+
+            // Nếu có nhập số thời gian (mili-giây)
+            if (val) {
+                console.log(`${logMsg} (Trong ${val}ms)`);
+                setTimeout(() => {
+                    currentBot.clearControlStates();
+                    console.log('>> [WASD] Đã hết thời gian, tự động phanh lại!');
+                }, val);
+            } else {
+                console.log(`${logMsg} (Vô cực. Gõ /stop để dừng)`);
+            }
+            return;
+        }
+
+        // --- 4. NẾU LÀ LỆNH IN-GAME (VD: /home, /spawn) ---
+        if (rawInput.startsWith('/')) {
+            currentBot.chat(rawInput);
+            console.log(`[Bot Đã Nhập Lệnh Game]: ${rawInput}`);
+            return;
+        }
+
+        // --- 5. NẾU LÀ CHAT CÔNG CỘNG ---
         const now = Date.now();
         if (now - lastChatTime < 1500) {
             console.log('>>> [CẢNH BÁO] Gõ chậm thôi! Kẻo server nó khóa mõm!');
             return;
         }
         lastChatTime = now;
-        currentBot.chat(input); 
-        console.log(`[Bạn Đã Chat]: ${input}`);
-    } else {
-        console.log('[Lỗi] Bot chưa vào game, không chat được!');
+        currentBot.chat(rawInput); 
+        console.log(`[Bạn Đã Chat Công Cộng]: ${rawInput}`);
+
+    } catch (error) {
+        console.log('>>> [Lỗi Điều Khiển]:', error.message);
     }
 });
 
