@@ -49,12 +49,9 @@ function createBot() {
         port: 25565,
         username: 'winlxag5555', 
         version: '1.12.2',
-        viewDistance: 'lowest',      // Đã xóa cái 'tiny' thừa
+        viewDistance: 'tiny', 
         checkTimeoutInterval: 60000,
-        respawn: false,
-        physicsEnabled: false,       // Tắt vật lý hoàn toàn
-        skipValidation: true,        // Bỏ qua xác thực gói tin
-        hideErrors: true             // Giảm log = giảm băng thông
+        respawn: false
     });
 
     currentBot = bot; 
