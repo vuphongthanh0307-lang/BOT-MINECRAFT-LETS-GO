@@ -42,6 +42,8 @@ let isComboRunning = false;
 let isGUIOpen = false; 
 let failCount = 0;
 let isSonarKick = false; // BẢO BỐI VƯỢT ẢI SONAR
+let sonarInterval = null; 
+let rotateInterval = null; 
 
 function createBot() {
     const bot = mineflayer.createBot({
@@ -108,10 +110,12 @@ function createBot() {
             }
         }
 
-        // 2. BẢO TRÌ/KICK -> NẰM CHỜ
-        if (lowerMsg.includes('kicked from') || lowerMsg.includes('bảo trì') || lowerMsg.includes('đã đóng')) {
-            console.log('[Hệ Thống] Phát hiện Bảo Trì/Kick! Đang nằm chờ server tự kéo...');
-            botState = 'MAINTENANCE'; 
+        // ==========================================
+        // 2. BẢO TRÌ/KICK -> TỰ ĐỘNG CẦM LA BÀN VÀO LẠI (ĐÃ FIX)
+        // ==========================================
+        if (lowerMsg.includes('kicked from') || lowerMsg.includes('bảo trì') || lowerMsg.includes('đã đóng') || lowerMsg.includes('server closed')) {
+            console.log('[Hệ Thống] Phát hiện Server Reset/Bảo trì búng ra Sảnh! Đổi trạng thái để đục lỗ vô lại...');
+            botState = 'IN_HUB'; 
             isComboRunning = false; 
         }
 
@@ -164,7 +168,8 @@ function createBot() {
     }, 3000); 
 
     bot.on('windowOpen', async (window) => {
-        if (isGUIOpen || botState === 'MAINTENANCE') return; 
+        // [ĐÃ FIX]: Không cho bot bị khóa mõm bởi MAINTENANCE nữa
+        if (isGUIOpen || botState === 'WAIT_AUTO') return; 
         isGUIOpen = true; 
         try {
             console.log('[Menu] Đang mở GUI...');
@@ -248,7 +253,7 @@ function createBot() {
 }
 
 // ==================================================
-// KỊCH BẢN MÚA CỦA WINLXAG5555
+// KỊCH BẢN MÚA CỦA WINLXAG5555 (GIỮ NGUYÊN 100%)
 // ==================================================
 async function startFarmingProcess(bot) {
     if (isComboRunning) return; 
