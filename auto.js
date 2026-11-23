@@ -49,7 +49,7 @@ function createBot() {
     const bot = mineflayer.createBot({
         host: 'aemine.vn',
         port: 25565,
-        username: 'winlxag5555', 
+        username: 'prettycow', 
         version: '1.12.2',
         viewDistance: 'tiny', 
         checkTimeoutInterval: 60000,
@@ -68,7 +68,7 @@ function createBot() {
             isLoggingIn = true;
             console.log('[Hub] Đã kết nối server, chuẩn bị đăng nhập...');
             await sleep(2000);
-            bot.chat('/dn Windvu@2#1#9#30849009630'); 
+            bot.chat('/dn blablabla'); 
             console.log('[Hub] Đã gửi lệnh login! Đang nghe ngóng...');
             botState = 'FIRST_LOGIN';
         }
@@ -88,7 +88,7 @@ function createBot() {
 
         // 1.5. LÌ LỢM ĐĂNG NHẬP
         if (lowerMsg.includes('đăng nhập bằng lệnh: /dn') || lowerMsg.includes('vui lòng đăng nhập')) {
-            setTimeout(() => bot.chat('/dn Windvu@2#1#9#30849009630'), 1500); 
+            setTimeout(() => bot.chat('/dn 18112007'), 1500); 
         }
 
         // ==========================================
@@ -176,7 +176,7 @@ function createBot() {
             await sleep(2000);
             await bot.clickWindow(20, 0, 0); 
             await sleep(2000);
-            await bot.clickWindow(14, 0, 0); 
+            await bot.clickWindow(12, 0, 0); 
             console.log('[Menu] Đã click xong! Chờ server load map...');
         } catch (err) {
             console.log('Lỗi click GUI:', err.message);
@@ -201,16 +201,22 @@ function createBot() {
         }
     });
 
+    // ==================================================
+    // PHẦN ĐƯỢC CHỈNH SỬA: TỰ ĐỘNG RESPAWN VÀ /HOME KHI CHẾT
+    // ==================================================
     bot.on('death', () => {
         bot.clearControlStates();
         isComboRunning = false;
+        console.log('[CẢNH BÁO] Bot đã ngỏm! Đang tự động ấn Hồi Sinh và quay lại Farm...');
 
-        if (botState !== 'FARMING') {
-            console.log('[CẢNH BÁO] Bot chết ở Sảnh! Đang tự động ấn Hồi Sinh...');
-            setTimeout(() => bot.respawn(), 2000);
-        } else {
-            console.log('[CẢNH BÁO] Bot bị giết trong cụm Farm! Nằm phơi xác...');
-        }
+        setTimeout(() => {
+            bot.respawn(); // Ấn nút hồi sinh
+            // Chờ server xử lý hồi sinh trong 2s, sau đó đưa về vòng lặp farm (trong đó sẽ tự /home)
+            setTimeout(() => {
+                botState = 'FARMING'; 
+                startFarmingProcess(bot);
+            }, 2000);
+        }, 2000);
     });
 
     bot.on('end', () => {
@@ -260,54 +266,14 @@ async function startFarmingProcess(bot) {
     isComboRunning = true;
 
     try {
-        bot.setQuickBarSlot(0); 
-        await sleep(5000);
-        
-        bot.setControlState('sneak', true); 
-        await sleep(200); 
-        
-        bot.swingArm('right'); 
-        await sleep(200);
-        bot.activateItem(); 
-        await sleep(200);
-        bot.activateItem(); 
-        await sleep(200);
-        bot.activateItem(); 
-        await sleep(200);
-
-        bot.setControlState('sneak', false); 
-        bot.clearControlStates(); 
-        await sleep(1000); 
-
+        await sleep(3000);
+        bot.setQuickBarSlot(0);
+        console.log('[Farm] Đã tự động chọn ô đầu tiên trên Hotbar!');
+        await sleep(3000);
         bot.chat('/home'); 
-        await randomSleep(6000, 7000); 
-         
-        console.log('[Farm] Đang lùi xéo bằng phím D + S trong 0.5 giây...');
-        bot.setControlState('forward', true);  
-        bot.setControlState('right', true); 
-        
-        await sleep(500); 
-        bot.clearControlStates();
-        await sleep(8000);
-        bot.chat('/sit');
-
-        const finalYaw = bot.entity.yaw;
-        const finalPitch = bot.entity.pitch - (20 * Math.PI / 180); 
-        
-        await bot.look(finalYaw, finalPitch, true); 
-        await sleep(300);
-        
         console.log('[Farm] Đã nhích đúng vị trí, ngồi xuống nhập định!');
         failCount = 0; 
-        // AUTO KIT TÂN THỦ
-        if (antiAfkLoop) clearInterval(antiAfkLoop);
-        antiAfkLoop = setInterval(() => {
-            if (botState === 'FARMING' && !isComboRunning) {
-                bot.chat('/kit tanthu');
-                console.log(`[${new Date().toLocaleTimeString()}] [Anti-AFK] Đã gõ /kit tanthu!`);
-            }
-        }, 600000);
-        
+
     } catch (err) {
         console.log('[Farm] Lỗi:', err.message);
     } finally {
